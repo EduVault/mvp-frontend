@@ -20,8 +20,8 @@
         :email-validation="state.emailValidation"
         :password-validation="state.passwordValidation"
         :making-request="state.makingRequest"
-        @login="login()"
-        @signup="signup()"
+        @login="loginOrSignup(false)"
+        @signup="loginOrSignup(true)"
       ></login-signup-buttons>
       <login-google></login-google>
       <login-facebook></login-facebook>
@@ -38,7 +38,6 @@ import LoginGoogle from '../components/LoginGoogle.vue';
 import LoginFacebook from '../components/LoginFacebook.vue';
 
 import store from '../store';
-import router from '../router';
 export default {
   name: 'Login',
   components: { LoginPassword, LoginSignupButtons, BAlert, LoginGoogle, LoginFacebook },
@@ -70,31 +69,15 @@ export default {
         }
       }
     );
-    const login = async function() {
+    const loginOrSignup = async function(signup: boolean) {
       state.makingRequest = true;
       state.failedLogin = false;
-      const response = await store.dispatch.authMod.passwordLogin({
+      const response = await store.dispatch.authMod.passwordAuth({
         password: state.password,
         username: state.email,
+        type: signup ? 'signup' : 'login',
       });
-      if (response === 'success') {
-        router.push('Home');
-      } else {
-        state.makingRequest = false;
-        state.failedLogin = true;
-        state.apiErrorMsg = response;
-      }
-    };
-    const signup = async function() {
-      state.makingRequest = true;
-      state.failedLogin = false;
-      const response = await store.dispatch.authMod.passwordSignup({
-        password: state.password,
-        username: state.email,
-      });
-      if (response === 'success') {
-        router.push('Home');
-      } else {
+      if (response !== 'success') {
         state.makingRequest = false;
         state.failedLogin = true;
         state.apiErrorMsg = response;
@@ -106,9 +89,7 @@ export default {
 
     return {
       state,
-      login,
-      signup,
-
+      loginOrSignup,
       countDownChanged,
     };
   },

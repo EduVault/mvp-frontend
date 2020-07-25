@@ -20,12 +20,13 @@ export default {
   components: { AlertUpdatePWA },
   computed: {
     loggedIn() {
-      return store.getters.authMod.jwtNotExpired;
+      return store.getters.authMod.loggedIn;
     },
   },
   methods: {
     logout() {
-      store.commit.authMod.JWT(null);
+      store.dispatch.authMod.logout();
+      store.commit.authMod.LOGGEDIN(false);
     },
   },
 };

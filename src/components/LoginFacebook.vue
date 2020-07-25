@@ -12,12 +12,6 @@
 
 <script>
 export default {
-  created() {
-    console.log(
-      process.env.NODE_ENV,
-      process.env.VUE_APP_DEV_API_URL + process.env.VUE_APP_FACEBOOK_AUTH
-    );
-  },
   methods: {
     openLink() {
       window.location =

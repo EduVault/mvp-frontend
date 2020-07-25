@@ -1,3 +1,5 @@
+import { Libp2pCryptoIdentity } from '@textile/threads-core';
+
 export interface Card {
   _id: string;
   frontText: string;
@@ -20,12 +22,12 @@ export interface DeleteCardPayload {
   deckTitle: string;
 }
 export interface AuthState {
-  jwt: null | string;
+  loggedIn: null | boolean;
   authType: 'google' | 'facebook' | 'password' | null;
   API_URL: string;
   PASSWORD_SIGNUP: string;
   PASSWORD_LOGIN: string;
-  VERIFY_JWT: string;
+  TEXTILE_ID: Libp2pCryptoIdentity;
 }
 export interface DecksState {
   decks: Deck[];

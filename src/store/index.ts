@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import Vuex, { Payload, Store } from 'vuex';
+import Vuex from 'vuex';
 import { createDirectStore } from 'direct-vuex';
 import VuexPersistence from 'vuex-persist';
 import Cookies from 'js-cookie';
@@ -32,15 +32,15 @@ const vuexLocalForage = new VuexPersistence<State>({
 //   reducer: state => ({ decksMod: state.decksMod }), // only save decks module
 //   // filter: mutation => mutation.type == 'addNavItem',
 // });
-const vuexCookie = new VuexPersistence<State>({
-  restoreState: (key, storage) => Cookies.getJSON(key),
-  saveState: (key, state, storage) =>
-    Cookies.set(key, state, {
-      expires: 3,
-    }) as void,
-  modules: ['authMod'], //only save user module
-  // filter: mutation => mutation.type == 'logIn' || mutation.type == 'logOut',
-});
+// const vuexCookie = new VuexPersistence<State>({
+//   restoreState: (key) => Cookies.getJSON(key),
+//   saveState: (key, state) =>
+//     Cookies.set(key, state, {
+//       expires: 3,
+//     }) as void,
+//   modules: ['authMod'], //only save user module
+//   // filter: mutation => mutation.type == 'logIn' || mutation.type == 'logOut',
+// });
 
 Vue.use(Vuex);
 
@@ -58,7 +58,7 @@ const {
   plugins: [
     vuexLocalForage.plugin,
     // vuexLocalStorage.plugin,
-    vuexCookie.plugin,
+    // vuexCookie.plugin,
   ],
 });
 //

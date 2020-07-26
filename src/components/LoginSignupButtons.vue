@@ -12,7 +12,7 @@
         :disabled="loginButtonDisable"
         type="submit"
         variant="primary"
-        @click="$emit('signup')"
+        @click.prevent="$emit('signup')"
       >
         <font-awesome-icon v-show="state.makingRequest" icon="spinner" spin />
         Sign up</b-button
@@ -22,7 +22,7 @@
         :disabled="loginButtonDisable"
         type="submit"
         variant="primary"
-        @click="$emit('login')"
+        @click.prevent="$emit('login')"
       >
         <font-awesome-icon v-show="state.makingRequest" icon="spinner" spin />
         Log in</b-button

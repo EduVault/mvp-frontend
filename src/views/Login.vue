@@ -75,7 +75,7 @@ export default {
       const response = await store.dispatch.authMod.passwordAuth({
         password: state.password,
         username: state.email,
-        type: signup ? 'signup' : 'login',
+        signup,
       });
       if (response !== 'success') {
         state.makingRequest = false;

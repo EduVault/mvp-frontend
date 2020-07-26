@@ -22,12 +22,12 @@ export interface DeleteCardPayload {
   deckTitle: string;
 }
 export interface AuthState {
-  loggedIn: null | boolean;
-  authType: 'google' | 'facebook' | 'password' | null;
   API_URL: string;
   PASSWORD_SIGNUP: string;
   PASSWORD_LOGIN: string;
-  TEXTILE_ID: Libp2pCryptoIdentity;
+  loggedIn: null | boolean;
+  keyPair: Libp2pCryptoIdentity;
+  authType: 'google' | 'facebook' | 'password' | null;
 }
 export interface DecksState {
   decks: Deck[];

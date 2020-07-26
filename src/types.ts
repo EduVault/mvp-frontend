@@ -1,4 +1,5 @@
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
+import { Client, ThreadID } from '@textile/hub';
 
 export interface Card {
   _id: string;
@@ -23,16 +24,21 @@ export interface DeleteCardPayload {
 }
 export interface AuthState {
   API_URL: string;
+  API_WS_URL: string;
   PASSWORD_SIGNUP: string;
   PASSWORD_LOGIN: string;
-  loggedIn: null | boolean;
+  loggedIn: boolean;
   keyPair: Libp2pCryptoIdentity;
-  authType: 'google' | 'facebook' | 'password' | null;
+  authType: 'google' | 'facebook' | 'password';
+  jwt: string;
+  pubKey: string;
+  client: Client;
+  threadId: ThreadID;
 }
 export interface DecksState {
   decks: Deck[];
 }
-export interface State {
+export interface RootState {
   authMod: AuthState;
   decksMod: DecksState;
 }

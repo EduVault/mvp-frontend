@@ -5,7 +5,7 @@ import VuexPersistence from 'vuex-persist';
 import Cookies from 'js-cookie';
 import localForage from 'localforage';
 
-import { State } from '../types';
+import { RootState } from '../types';
 import authModule from './authModule';
 import decksModule from './decksModule';
 
@@ -20,7 +20,7 @@ const setDefault = function(store: any) {
   store.commit.decksMod.addDeck(defaultDeck);
 };
 
-const vuexLocalForage = new VuexPersistence<State>({
+const vuexLocalForage = new VuexPersistence<RootState>({
   key: process.env.VUE_APP_STORAGE_KEY,
   storage: localForage,
   reducer: state => ({ decksMod: state.decksMod }), // only save decks module

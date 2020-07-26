@@ -1,5 +1,7 @@
-import { DecksState, Deck, DeleteCardPayload, EditCardPayload, Card } from '../types';
-
+import { DecksState, RootState, Deck, DeleteCardPayload, EditCardPayload, Card } from '../types';
+import { ActionContext } from 'vuex';
+import { InstanceList } from '@textile/threads-client/dist/models/query';
+import store from './index';
 export default {
   namespaced: true as true,
   state: {
@@ -38,6 +40,7 @@ export default {
         }
       }
     },
+
     editCard(state: DecksState, payload: EditCardPayload) {
       for (const deck of state.decks) {
         if (deck.title === payload.deckTitle) {
@@ -54,10 +57,33 @@ export default {
     },
   },
   actions: {
-    // async loadName({ commit }, payload: { id: string }) {
-    //   const name = `Name-${payload.id}`; // load it from somewhere
-    //   commit('SET_NAME', name);
-    //   return { name };
-    // },
+    async createDeckInstances(
+      { state, dispatch }: ActionContext<DecksState, RootState>,
+      decks: Deck[]
+    ) {
+      const existingInstances = await (await store.dispatch.decksMod.getAllDeckInstances())
+        .instancesList;
+      console.log('existingInstances', existingInstances);
+      if (existingInstances.length === 0) {
+        console.log('---no instances found');
+        const createdDecks = await store.state.authMod.client.create(
+          store.state.authMod.threadId,
+          'Deck',
+          decks // note that the third param needs to be an array
+        ); // client.create() returns the deck _ids //
+        console.log('createdDecks', createdDecks);
+      }
+    },
+    async getAllDeckInstances({
+      state,
+    }: ActionContext<DecksState, RootState>): Promise<InstanceList<any>> {
+      const response = await store.state.authMod.client.find(
+        store.state.authMod.threadId,
+        'Deck',
+        {}
+      );
+      console.log('getAllDeckInstances response', response);
+      return response;
+    },
   },
 };

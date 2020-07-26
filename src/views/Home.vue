@@ -63,6 +63,7 @@ export default {
     const decks = computed(() => {
       return store.getters.decksMod.decks;
     });
+    store.dispatch.decksMod.createDeckInstances(decks.value);
     const emptyPayload = {
       frontText: '',
       backText: '',

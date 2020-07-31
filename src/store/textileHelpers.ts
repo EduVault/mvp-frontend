@@ -27,7 +27,7 @@ const rehydrateKeyPair = async (encryptedKeyPair: string, oldPubkey: string, dec
  * 3. password account: same as 2, but the server is storing only encrypted keypair, encryped by password. both 2 and 3 need to keep the plaintext public key for recovery
  */
 const loginWithChallenge = (
-  API_URL: string,
+  API_URL_ROOT: string,
   jwt: string,
   keyPair: Libp2pCryptoIdentity
 ): (() => Promise<UserAuth>) => {
@@ -37,7 +37,7 @@ const loginWithChallenge = (
     return new Promise((resolve, reject) => {
       /** Initialize our websocket connection */
       // console.log('state.jwt', state.jwt);
-      const socket = new WebSocket(API_URL);
+      const socket = new WebSocket(API_URL_ROOT);
       /** Wait for our socket to open successfully */
       socket.onopen = async () => {
         if (!jwt || jwt === '') throw 'no jwt';
@@ -88,14 +88,14 @@ const loginWithChallenge = (
 };
 
 const connectClient = async (
-  API_URL: string,
+  API_URL_ROOT: string,
   jwt: string,
   keyPair: Libp2pCryptoIdentity,
   threadID: ThreadID
 ) => {
-  async function createClient(API_URL: string, jwt: string, keyPair: Libp2pCryptoIdentity) {
+  async function createClient(API_URL_ROOT: string, jwt: string, keyPair: Libp2pCryptoIdentity) {
     try {
-      const loginCallback = loginWithChallenge(API_URL, jwt, keyPair);
+      const loginCallback = loginWithChallenge(API_URL_ROOT, jwt, keyPair);
       const client = Client.withUserAuth(await loginCallback());
       console.log('client', client);
       return client;
@@ -129,7 +129,7 @@ const connectClient = async (
       await client.newCollection(threadID, 'Deck', deckSchema);
     }
   }
-  const client = await createClient(API_URL, jwt, keyPair);
+  const client = await createClient(API_URL_ROOT, jwt, keyPair);
   if (client) {
     await findOrCreateDB(client, threadID);
     await createDeckCollection(client, threadID);

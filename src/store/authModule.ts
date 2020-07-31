@@ -12,14 +12,18 @@ import CryptoJS from 'crypto-js';
 import { loginWithChallenge, connectClient, rehydrateKeyPair } from './textileHelpers';
 import { CLIENT_RENEG_LIMIT } from 'tls';
 // import { DBInfo } from '@textile/threads';
-import { API_URL, PASSWORD_SIGNUP, DEV_API_URL, PASSWORD_LOGIN } from '../config';
+import { API_URL_ROOT, PASSWORD_SIGNUP, DEV_API_URL_ROOT, PASSWORD_LOGIN } from '../config';
 import defaultDeck from '@/assets/defaultDeck.json';
 
 export default {
   namespaced: true as true,
   state: {
-    API_URL: process.env.NODE_ENV === 'production' ? 'https://' + API_URL : 'http://' + DEV_API_URL,
-    API_WS_URL: process.env.NODE_ENV === 'production' ? 'wss://' + API_URL : 'ws://' + DEV_API_URL,
+    API_URL_ROOT:
+      process.env.NODE_ENV === 'production'
+        ? 'https://' + API_URL_ROOT
+        : 'http://' + DEV_API_URL_ROOT,
+    API_WS_URL:
+      process.env.NODE_ENV === 'production' ? 'wss://' + API_URL_ROOT : 'ws://' + DEV_API_URL_ROOT,
     PASSWORD_SIGNUP: PASSWORD_SIGNUP,
     PASSWORD_LOGIN: PASSWORD_LOGIN,
   } as AuthState,
@@ -81,8 +85,8 @@ export default {
           options.data.threadIDStr = newThreadID.toString();
           options.data.encryptedKeyPair = encryptedKeyPair;
           options.data.pubKey = pubKey;
-          options.url = state.API_URL + state.PASSWORD_SIGNUP;
-        } else options.url = options.url = state.API_URL + state.PASSWORD_LOGIN;
+          options.url = state.API_URL_ROOT + state.PASSWORD_SIGNUP;
+        } else options.url = options.url = state.API_URL_ROOT + state.PASSWORD_LOGIN;
 
         const response = await axios(options);
         const data = response.data;
@@ -139,7 +143,7 @@ export default {
 
     async logout({ state }: ActionContext<AuthState, RootState>) {
       const options = {
-        url: state.API_URL + '/logout',
+        url: state.API_URL_ROOT + '/logout',
         method: 'GET',
         withCredentials: true,
       } as AxiosRequestConfig;
@@ -156,7 +160,7 @@ export default {
     async checkAuth({ state }: ActionContext<AuthState, RootState>) {
       try {
         const options = {
-          url: state.API_URL + '/auth-check',
+          url: state.API_URL_ROOT + '/auth-check',
           headers: { 'Access-Control-Allow-Origin': '*' },
           method: 'GET',
           withCredentials: true,
@@ -239,7 +243,7 @@ export default {
     async getUser({ state }: ActionContext<AuthState, RootState>) {
       try {
         const options = {
-          url: state.API_URL + '/get-user',
+          url: state.API_URL_ROOT + '/get-user',
           headers: { 'Access-Control-Allow-Origin': '*' },
           method: 'GET',
           withCredentials: true,

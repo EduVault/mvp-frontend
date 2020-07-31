@@ -62,7 +62,7 @@ export interface DeleteCardPayload {
   deckId: string;
 }
 export interface AuthState {
-  API_URL: string;
+  API_URL_ROOT: string;
   API_WS_URL: string;
   PASSWORD_SIGNUP: string;
   PASSWORD_LOGIN: string;

@@ -11,13 +11,15 @@
 </template>
 
 <script>
-import { API_URL, DEV_API_URL, GOOGLE_AUTH } from '../config';
+import { API_URL_ROOT, DEV_API_URL_ROOT, GOOGLE_AUTH } from '../config';
 
 export default {
   methods: {
     openLink() {
       window.location =
-        process.env.NODE_ENV === 'production' ? API_URL + GOOGLE_AUTH : DEV_API_URL + GOOGLE_AUTH;
+        process.env.NODE_ENV === 'production'
+          ? API_URL_ROOT + GOOGLE_AUTH
+          : DEV_API_URL_ROOT + GOOGLE_AUTH;
     },
   },
 };

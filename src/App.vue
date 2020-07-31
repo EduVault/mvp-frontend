@@ -13,7 +13,7 @@
     <router-view class="app_router-view" />
   </div>
 </template>
-<script lang="ts">
+<script>
 import store from './store';
 import AlertUpdatePWA from './components/AlertUpdatePWA.vue';
 export default {

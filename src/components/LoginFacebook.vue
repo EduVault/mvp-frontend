@@ -11,13 +11,14 @@
 </template>
 
 <script>
+import { API_URL, DEV_API_URL, FACEBOOK_AUTH } from '../config';
 export default {
   methods: {
     openLink() {
       window.location =
         process.env.NODE_ENV === 'production'
-          ? process.env.VUE_APP_API_URL + process.env.VUE_APP_FACEBOOK_AUTH
-          : process.env.VUE_APP_DEV_API_URL + process.env.VUE_APP_FACEBOOK_AUTH;
+          ? API_URL + FACEBOOK_AUTH
+          : DEV_API_URL + FACEBOOK_AUTH;
     },
   },
 };

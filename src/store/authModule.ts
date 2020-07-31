@@ -12,22 +12,16 @@ import CryptoJS from 'crypto-js';
 import { loginWithChallenge, connectClient, rehydrateKeyPair } from './textileHelpers';
 import { CLIENT_RENEG_LIMIT } from 'tls';
 // import { DBInfo } from '@textile/threads';
-const TEXTILE_API = process.env.VUE_APP_TEXTILE_API;
+import { API_URL, PASSWORD_SIGNUP, DEV_API_URL, PASSWORD_LOGIN } from '../config';
 import defaultDeck from '@/assets/defaultDeck.json';
 
 export default {
   namespaced: true as true,
   state: {
-    API_URL:
-      process.env.NODE_ENV === 'production' || process.env.VUE_APP_NODE_ENV === 'production'
-        ? 'https://' + process.env.VUE_APP_API_URL
-        : 'http://' + process.env.VUE_APP_DEV_API_URL,
-    API_WS_URL:
-      process.env.NODE_ENV === 'production' || process.env.VUE_APP_NODE_ENV === 'production'
-        ? 'wss://' + process.env.VUE_APP_API_URL
-        : 'ws://' + process.env.VUE_APP_DEV_API_URL,
-    PASSWORD_SIGNUP: process.env.VUE_APP_PASSWORD_SIGNUP,
-    PASSWORD_LOGIN: process.env.VUE_APP_PASSWORD_LOGIN,
+    API_URL: process.env.NODE_ENV === 'production' ? 'https://' + API_URL : 'http://' + DEV_API_URL,
+    API_WS_URL: process.env.NODE_ENV === 'production' ? 'wss://' + API_URL : 'ws://' + DEV_API_URL,
+    PASSWORD_SIGNUP: PASSWORD_SIGNUP,
+    PASSWORD_LOGIN: PASSWORD_LOGIN,
   } as AuthState,
   getters: {
     loggedIn: (state: AuthState) => state.loggedIn,

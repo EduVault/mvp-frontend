@@ -3,7 +3,7 @@ import VueRouter, { RouteConfig, Route, NavigationGuardNext } from 'vue-router';
 import store from '../store';
 import Login from '../views/Login.vue';
 import Home from '../views/Home.vue';
-
+import { BASE_URL } from '../config';
 Vue.use(VueRouter);
 
 /**More strict check */
@@ -40,7 +40,7 @@ const routes: Array<RouteConfig> = [
 
 const router = new VueRouter({
   mode: 'history',
-  base: process.env.BASE_URL,
+  base: BASE_URL,
   routes,
 });
 

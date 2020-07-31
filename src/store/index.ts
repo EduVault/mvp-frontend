@@ -4,6 +4,7 @@ import { createDirectStore } from 'direct-vuex';
 import VuexPersistence from 'vuex-persist';
 import Cookies from 'js-cookie';
 import localForage from 'localforage';
+import { STORAGE_KEY } from '../config';
 
 import { RootState } from '../types';
 import authModule from './authModule';
@@ -21,7 +22,7 @@ import decksModule from './decksModule';
 // };
 
 const vuexLocalForage = new VuexPersistence<RootState>({
-  key: process.env.VUE_APP_STORAGE_KEY,
+  key: STORAGE_KEY,
   storage: localForage,
   reducer: state => ({
     decksMod: {

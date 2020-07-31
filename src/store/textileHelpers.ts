@@ -10,7 +10,6 @@ import { fromEvent, Observable } from 'rxjs';
 import defaultDeck from '@/assets/defaultDeck.json';
 import { v4 as uuid } from 'uuid';
 // import { DBInfo } from '@textile/threads';
-const TEXTILE_API = process.env.VUE_APP_TEXTILE_API;
 
 const rehydrateKeyPair = async (encryptedKeyPair: string, oldPubkey: string, decrpyter: string) => {
   const decryptedKeyPairBytes = CryptoJS.AES.decrypt(encryptedKeyPair, decrpyter);

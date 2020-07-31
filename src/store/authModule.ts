@@ -1,22 +1,23 @@
-import { AuthState, RootState } from '../types';
+import { AuthState, RootState, Deck } from '../types';
 import { ActionContext } from 'vuex';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import store from '../store';
 // import router from '../router';
-import { ApiRes } from '../types';
+// import { ApiRes } from '../types';
 import router from '@/router';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { Collection, Database, Client, ThreadID } from '@textile/hub';
 import { deckSchema } from '../schemas';
 import CryptoJS from 'crypto-js';
-import { loginWithChallenge } from './textileHelpers';
+import { loginWithChallenge, connectClient, rehydrateKeyPair } from './textileHelpers';
+import { CLIENT_RENEG_LIMIT } from 'tls';
+// import { DBInfo } from '@textile/threads';
 const TEXTILE_API = process.env.VUE_APP_TEXTILE_API;
+import defaultDeck from '@/assets/defaultDeck.json';
 
 export default {
   namespaced: true as true,
   state: {
-    jwt: '',
-    pubKey: '',
     API_URL:
       process.env.NODE_ENV === 'production' || process.env.VUE_APP_NODE_ENV === 'production'
         ? 'https://' + process.env.VUE_APP_API_URL
@@ -29,9 +30,7 @@ export default {
     PASSWORD_LOGIN: process.env.VUE_APP_PASSWORD_LOGIN,
   } as AuthState,
   getters: {
-    loggedIn(state: AuthState) {
-      return state.loggedIn;
-    },
+    loggedIn: (state: AuthState) => state.loggedIn,
   },
   mutations: {
     AUTHTYPE(state: AuthState, type: 'google' | 'facebook' | 'password') {
@@ -46,12 +45,18 @@ export default {
     REMOVE_KEYPAIR(state: AuthState) {
       delete state.keyPair;
     },
-    JWT(state: AuthState, jwt: string) {
+    JWT(state: AuthState, jwt: string | undefined) {
       state.jwt = jwt;
     },
-    PUBKEY(state: AuthState, key: string) {
+    PUBKEY(state: AuthState, key: string | undefined) {
       state.pubKey = key;
     },
+    THREADID(state: AuthState, ID: ThreadID) {
+      state.threadID = ID;
+    },
+    // DB(state: AuthState, db: Database) {
+    //   state.db = db;
+    // },
   },
   actions: {
     async passwordAuth(
@@ -73,65 +78,68 @@ export default {
         if (payload.signup) {
           const keyPair = await Libp2pCryptoIdentity.fromRandom();
           const pubKey = keyPair.public.toString();
+          store.commit.authMod.PUBKEY(pubKey);
           const encryptedKeyPair = CryptoJS.AES.encrypt(
             keyPair.toString(),
             payload.password
           ).toString();
+          const newThreadID = ThreadID.fromRandom();
+          options.data.threadIDStr = newThreadID.toString();
           options.data.encryptedKeyPair = encryptedKeyPair;
           options.data.pubKey = pubKey;
-          store.commit.authMod.PUBKEY(pubKey);
           options.url = state.API_URL + state.PASSWORD_SIGNUP;
         } else options.url = options.url = state.API_URL + state.PASSWORD_LOGIN;
+
         const response = await axios(options);
         const data = response.data;
+        console.log('login/signup data', data);
         if (data.code !== 200) {
           if (data.message) return data.message;
           else return 'Unable to connect to database';
         } else {
           // console.log(data.data);
-          const decryptedKeyPairBytes = CryptoJS.AES.decrypt(
+          const rehydratedKeyPair = await rehydrateKeyPair(
             data.data.encryptedKeyPair,
+            data.data.pubKey,
             payload.password
           );
-          const decryptedKeyPairString = decryptedKeyPairBytes.toString(CryptoJS.enc.Utf8);
-          const rehydratedKeyPair = await Libp2pCryptoIdentity.fromString(decryptedKeyPairString);
-          const testPubKey = rehydratedKeyPair.public.toString();
-          console.log('keys match: ', testPubKey === data.data.pubKey);
-          store.commit.authMod.KEYPAIR(rehydratedKeyPair);
-          store.commit.authMod.JWT(data.data.jwt);
+          const threadID = ThreadID.fromString(data.data.threadIDStr);
+          await store.commit.authMod.KEYPAIR(rehydratedKeyPair);
+          await store.commit.authMod.JWT(data.data.jwt);
+          await store.commit.authMod.THREADID(threadID);
           store.commit.authMod.AUTHTYPE('password');
           // save a version of the key pair encrypted by the jwt in local storage in case we close the window
           const jwtEncryptedKeyPair = CryptoJS.AES.encrypt(
-            decryptedKeyPairString,
+            rehydratedKeyPair.toString(),
             data.data.jwt
           ).toString();
           localStorage.setItem('EduVault_jwtEncryptedKeyPair', jwtEncryptedKeyPair);
           localStorage.setItem('EduVault_pubKey', data.data.pubKey);
+          localStorage.setItem('EduVault_threadID', data.data.threadIDStr);
 
-          const loginCallback = loginWithChallenge(state);
-          state.client = Client.withUserAuth(await loginCallback(), TEXTILE_API);
-          state.threadId = ThreadID.fromRandom();
-          console.log('stuck? 3');
-
-          await state.client.newDB(state.threadId, 'DB');
-          const afterCheck = await state.client.getDBInfo(state.threadId);
-          console.log('afterCheck', afterCheck);
-
-          await state.client.newCollection(state.threadId, 'Deck', deckSchema);
-
+          const client = await connectClient(
+            state.API_WS_URL + '/ws/auth',
+            data.data.jwt,
+            rehydratedKeyPair,
+            threadID
+          );
+          if (client) {
+            await store.commit.decksMod.CLIENT(client);
+            await store.dispatch.decksMod.setUpListening();
+            await store.dispatch.decksMod.deckMergeToState([defaultDeck]);
+            const threadDeckInstances = await store.dispatch.decksMod.getAllDeckInstances();
+            await store.dispatch.decksMod.deckMergeToState(threadDeckInstances.instancesList);
+          } else throw 'unable to connect to Threads DB';
+          store.commit.authMod.LOGGEDIN(true);
           router.push('/home');
           return 'success';
         }
       } catch (err) {
         console.log(err);
-        if (
-          err.response &&
-          err.response.data &&
-          err.response.data.data &&
-          err.response.data.data.error
-        )
-          return err.response.data.data.error;
-        else return 'Unable to connect to database';
+        console.log(err.response);
+        if (err.response && err.response.data && err.response.data.message)
+          return err.response.data.message;
+        else return 'Issue connecting to database';
       }
     },
 
@@ -142,14 +150,15 @@ export default {
         withCredentials: true,
       } as AxiosRequestConfig;
       axios(options);
-      store.commit.authMod.JWT('');
-      store.commit.authMod.PUBKEY('');
+      store.commit.authMod.JWT(undefined);
+      store.commit.authMod.PUBKEY(undefined);
       store.commit.authMod.REMOVE_KEYPAIR();
-      console.log('deleted keypair', state.keyPair);
       store.commit.authMod.LOGGEDIN(false);
-      localStorage.setItem('EduVault_jwtEncryptedKeyPair', '');
-      localStorage.setItem('EduVault_pubKey', '');
+      localStorage.removeItem('EduVault_jwtEncryptedKeyPair');
+      localStorage.removeItem('EduVault_pubKey');
+      localStorage.removeItem('EduVault_threadID');
     },
+
     async checkAuth({ state }: ActionContext<AuthState, RootState>) {
       try {
         const options = {
@@ -168,82 +177,86 @@ export default {
             store.commit.authMod.LOGGEDIN(true);
             return true;
           } else {
-            // if we don't have localStorage we need to login
             const jwtEncryptedKeyPair = localStorage.getItem('EduVault_jwtEncryptedKeyPair');
             const storedPubKey = localStorage.getItem('EduVault_pubKey');
-            if (
-              !jwtEncryptedKeyPair ||
-              jwtEncryptedKeyPair === '' ||
-              !storedPubKey ||
-              storedPubKey == ''
-            ) {
+            const threadStr = localStorage.getItem('EduVault_threadID');
+            // if we don't have items stored in localStorage we need to login
+            if (!jwtEncryptedKeyPair || !storedPubKey || !threadStr) {
               store.commit.authMod.LOGGEDIN(false);
+              console.log('couldnt find keys stored in local storage');
               return false;
             } else {
+              // If we refreshed the page and don't have a jwt, we'll need to request a new one
               let jwt;
-              if (!state.jwt || state.jwt === '') jwt = await store.dispatch.authMod.getJwt();
-              else jwt = state.jwt;
-              if (!jwt || jwt === '') {
-                store.commit.authMod.LOGGEDIN(false);
-                return false;
-              }
-
-              const decryptedKeyPairString = CryptoJS.AES.decrypt(
-                jwtEncryptedKeyPair,
-                jwt
-              ).toString(CryptoJS.enc.Utf8);
-              const rehydratedKeyPair = await Libp2pCryptoIdentity.fromString(
-                decryptedKeyPairString
-              );
-              const testPubKey = rehydratedKeyPair.public.toString();
-              const keysMatch = testPubKey === storedPubKey;
-              console.log('rehydrate without login===keys match: ', keysMatch);
-              if (!keysMatch) {
-                store.commit.authMod.LOGGEDIN(false);
-                return false;
+              if (!state.jwt) {
+                const user = await store.dispatch.authMod.getUser();
+                jwt = user.jwt;
               } else {
-                store.commit.authMod.KEYPAIR(rehydratedKeyPair);
-                store.commit.authMod.JWT(jwt);
-                store.commit.authMod.PUBKEY(storedPubKey);
-                store.commit.authMod.LOGGEDIN(true);
-                return true;
+                jwt = state.jwt;
               }
+              if (!jwt) {
+                // if we failed, we'll need to login
+                store.commit.authMod.LOGGEDIN(false);
+                console.log('invalid jwt');
+                return false;
+              }
+              // if we have all the info we need, rehydrate them and start back up the DB connection.
+              const threadID = ThreadID.fromString(threadStr);
+              let rehydratedKeyPair;
+              try {
+                rehydratedKeyPair = await rehydrateKeyPair(jwtEncryptedKeyPair, storedPubKey, jwt);
+              } catch {
+                store.commit.authMod.LOGGEDIN(false);
+                console.log('error rehydrating keys');
+                return false;
+              }
+              store.commit.authMod.KEYPAIR(rehydratedKeyPair);
+              store.commit.authMod.JWT(jwt);
+              store.commit.authMod.PUBKEY(storedPubKey);
+              store.commit.authMod.THREADID(threadID);
+              const client = await connectClient(
+                state.API_WS_URL + '/ws/auth',
+                jwt,
+                rehydratedKeyPair,
+                threadID
+              );
+              if (client) {
+                store.commit.decksMod.CLIENT(client);
+                await store.dispatch.decksMod.setUpListening();
+                await store.dispatch.decksMod.deckMergeToState([defaultDeck]);
+                const threadDeckInstances = await store.dispatch.decksMod.getAllDeckInstances();
+                await store.dispatch.decksMod.deckMergeToState(threadDeckInstances.instancesList);
+              } else throw 'unable to reconnect to Thread DB';
+              store.commit.authMod.LOGGEDIN(true);
+              return true;
             }
           }
         } else {
           store.commit.authMod.LOGGEDIN(false);
+          console.log('authcheck failed (likely no cookie)');
           return false;
         }
-      } catch {
+      } catch (err) {
+        console.log('other error', err, err.message);
         return false;
       }
     },
-    async getJwt({ state }: ActionContext<AuthState, RootState>): Promise<string> {
+
+    async getUser({ state }: ActionContext<AuthState, RootState>) {
       try {
         const options = {
-          url: state.API_URL + '/get-jwt',
+          url: state.API_URL + '/get-user',
           headers: { 'Access-Control-Allow-Origin': '*' },
           method: 'GET',
           withCredentials: true,
         } as AxiosRequestConfig;
         const response = await axios(options);
-        if (!response.data || !response.data.data || !response.data.data.jwt) return '';
-        else return response.data.data.jwt;
+        if (!response.data || !response.data.data || !response.data.data.jwt) return null;
+        else return response.data.data;
       } catch (err) {
         console.log(err);
-        return '';
+        return null;
       }
-    },
-    async getKeys({ state }: ActionContext<AuthState, RootState>) {
-      const socket = new WebSocket(state.API_URL + '/ws/userauth');
-      /** Wait for our socket to open successfully */
-      socket.onopen = () => {
-        socket.send(
-          JSON.stringify({
-            type: 'keys-request',
-          })
-        );
-      };
     },
   },
 };

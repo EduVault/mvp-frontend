@@ -23,6 +23,8 @@
 <script lang="ts">
 import Vue from 'vue';
 import { Deck, Card } from '@/types';
+import { v4 as uuid } from 'uuid';
+
 export default Vue.extend({
   data() {
     return {
@@ -34,6 +36,8 @@ export default Vue.extend({
       const newDeck = {
         cards: [] as Card[],
         title: this.newTitle,
+        updatedAt: new Date().getTime(),
+        _id: uuid(),
       } as Deck;
       this.$emit('createDeck', newDeck);
       this.newTitle = '';

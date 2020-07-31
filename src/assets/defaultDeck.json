@@ -1,24 +1,29 @@
 {
-  "_id": "123",
+  "_id": "f4bde0df-c019-418e-a092-9f8371076316",
   "cards": [{
       "_id": "1",
       "frontText": "What is a group of zebras called?",
-      "backText": "A zeal"
+      "backText": "A zeal",
+      "updatedAt": 1596098767092
     },
     {
       "_id": "2",
       "frontText": "What is a group of slugs called?",
-      "backText": "A cornucopia"
+      "backText": "A cornucopia",
+      "updatedAt": 1596098767092
     },
     {
       "_id": "3",
       "frontText": "What is a group of lemurs called?",
-      "backText": "A conspiracy"
+      "backText": "A conspiracy",
+      "updatedAt": 1596098767092
     }, {
       "_id": "4",
       "frontText": "What is a group of lizards called?",
-      "backText": "A lounge"
+      "backText": "A lounge",
+      "updatedAt": 1596098767092
     }
   ],
-  "title": "Animal facts"
+  "title": "Animal facts",
+  "updatedAt": 1596098767092
 }

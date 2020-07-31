@@ -18,9 +18,10 @@
     <section class="home__section display-section">
       <deck-display
         v-for="deck in decks"
-        :key="deck.title"
+        :key="deck._id"
         class="display-section__deck-display"
         :deck="deck"
+        @deleteDeck="deleteDeck"
         @deleteCard="deleteCard"
         @openCardEditor="openCardEditor"
       ></deck-display>
@@ -61,43 +62,48 @@ export default {
   components: { DeckDisplay, DeckEditor, CardEditor, NewCardButton, NewDeckButton },
   setup() {
     const decks = computed(() => {
-      return store.getters.decksMod.decks;
+      console.log('decks changed');
+      return store.getters.decksMod.decks.filter(deck => !deck.deleted);
     });
-    store.dispatch.decksMod.createDeckInstances(decks.value);
+
     const emptyPayload = {
-      frontText: '',
-      backText: '',
-      deckTitle: '',
-      _id: '',
+      card: { _id: '', updatedAt: 0, frontText: '', backText: '' },
+      deckId: '',
     };
     const state = reactive({
-      selectedDeck: decks ? (decks.value[0].title as string) : ('' as string),
+      selectedDeck: decks ? (decks.value[0] as Deck) : undefined,
       showCardEditor: false as boolean,
       showDeckEditor: false as boolean,
       editPayload: emptyPayload as EditCardPayload,
       newCard: false as boolean,
     });
 
-    const createDeck = (deck: Deck) => {
-      store.commit.decksMod.addDeck(deck);
-      state.selectedDeck = deck.title;
+    const createDeck = async function(deck: Deck) {
+      console.log('create deck', deck);
+      await store.dispatch.decksMod.deckMergeToState([deck]);
+      state.selectedDeck = deck;
       state.showDeckEditor = false;
     };
+    const deleteDeck = (deckId: string) => {
+      store.dispatch.decksMod.deleteDeck(deckId);
+    };
     const addNewCard = (payload: EditCardPayload) => {
-      store.commit.decksMod.addCard(payload);
+      store.dispatch.decksMod.addCard(payload);
       state.showCardEditor = false;
       state.newCard = false;
     };
     const editCard = (payload: EditCardPayload) => {
-      store.commit.decksMod.editCard(payload);
+      store.dispatch.decksMod.editCard(payload);
       state.showCardEditor = false;
       state.newCard = false;
     };
     const deleteCard = (payload: DeleteCardPayload) => {
-      store.commit.decksMod.deleteCard(payload);
+      store.dispatch.decksMod.deleteCard(payload);
     };
-    const changeSelectedDeck = (title: string) => {
-      state.selectedDeck = title;
+    const changeSelectedDeck = (deckId: string) => {
+      decks.value.forEach(deck => {
+        if (deck._id === deckId) state.selectedDeck = deck;
+      });
     };
     const openCardEditor = (payload: EditCardPayload) => {
       if (!state.newCard) state.editPayload = payload;
@@ -109,6 +115,7 @@ export default {
       decks,
       state,
       createDeck,
+      deleteDeck,
       addNewCard,
       emptyPayload,
       editCard,

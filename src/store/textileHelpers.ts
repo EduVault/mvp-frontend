@@ -1,28 +1,52 @@
 import { UserAuth } from '@textile/hub';
-import { AuthState } from '../types';
+import { AuthState, Deck, deckSchema } from '../types';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { Buffer } from 'buffer';
+import { Collection, Database, Client, ThreadID } from '@textile/hub';
+import store from './index';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import CryptoJS from 'crypto-js';
+import { fromEvent, Observable } from 'rxjs';
+import defaultDeck from '@/assets/defaultDeck.json';
+import { v4 as uuid } from 'uuid';
+// import { DBInfo } from '@textile/threads';
+const TEXTILE_API = process.env.VUE_APP_TEXTILE_API;
+
+const rehydrateKeyPair = async (encryptedKeyPair: string, oldPubkey: string, decrpyter: string) => {
+  const decryptedKeyPairBytes = CryptoJS.AES.decrypt(encryptedKeyPair, decrpyter);
+  const decryptedKeyPairString = decryptedKeyPairBytes.toString(CryptoJS.enc.Utf8);
+  const rehydratedKeyPair = await Libp2pCryptoIdentity.fromString(decryptedKeyPairString);
+  const testMatching = rehydratedKeyPair.public.toString() === oldPubkey;
+  console.log('keys match: ', testMatching);
+  if (!testMatching) throw 'Unable to decrypt keys from server';
+  return rehydratedKeyPair;
+};
 
 /** we should have different forms of getting the Textile userAuth,
  * 1. crypto wallet: ask crypto wallet to sign
  * 2. oauth: on log in, get the keypair encrypted by PIN and store in localStorage, challeng user with PIN, and keep the unencrypted keypair in app storage to keep signing
  * 3. password account: same as 2, but the server is storing only encrypted keypair, encryped by password. both 2 and 3 need to keep the plaintext public key for recovery
  */
-const loginWithChallenge = (state: AuthState): (() => Promise<UserAuth>) => {
+const loginWithChallenge = (
+  API_URL: string,
+  jwt: string,
+  keyPair: Libp2pCryptoIdentity
+): (() => Promise<UserAuth>) => {
   // we pass identity into the function returning function to make it
   // available later in the callback
   return () => {
     return new Promise((resolve, reject) => {
       /** Initialize our websocket connection */
-      console.log('state.API_WS_URL + /ws/auth', state.API_WS_URL + '/ws/auth');
-      const socket = new WebSocket(state.API_WS_URL + '/ws/auth');
+      // console.log('state.jwt', state.jwt);
+      const socket = new WebSocket(API_URL);
       /** Wait for our socket to open successfully */
-      socket.onopen = () => {
-        console.log('opened');
+      socket.onopen = async () => {
+        if (!jwt || jwt === '') throw 'no jwt';
+        if (!keyPair) throw 'no keyPair';
         socket.send(
           JSON.stringify({
             type: 'token-request',
-            jwt: state.jwt,
+            jwt: jwt,
           })
         );
 
@@ -41,15 +65,12 @@ const loginWithChallenge = (state: AuthState): (() => Promise<UserAuth>) => {
               /** Convert the challenge json to a Buffer */
               const buf = Buffer.from(data.value);
               /** User our identity to sign the challenge */
-              let keyPair: Libp2pCryptoIdentity;
-              if (!state.keyPair) throw 'no keypair';
-              else keyPair = state.keyPair;
               const signed = await keyPair.sign(buf);
               /** Send the signed challenge back to the server */
               socket.send(
                 JSON.stringify({
                   type: 'challenge-response',
-                  jwt: state.jwt,
+                  jwt: jwt,
                   signature: Buffer.from(signed).toJSON(),
                 })
               );
@@ -67,4 +88,54 @@ const loginWithChallenge = (state: AuthState): (() => Promise<UserAuth>) => {
   };
 };
 
-export { loginWithChallenge };
+const connectClient = async (
+  API_URL: string,
+  jwt: string,
+  keyPair: Libp2pCryptoIdentity,
+  threadID: ThreadID
+) => {
+  async function createClient(API_URL: string, jwt: string, keyPair: Libp2pCryptoIdentity) {
+    try {
+      const loginCallback = loginWithChallenge(API_URL, jwt, keyPair);
+      const client = Client.withUserAuth(await loginCallback());
+      console.log('client', client);
+      return client;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  async function findOrCreateDB(client: Client, threadID: ThreadID) {
+    // await client.deleteDB(threadID); // use to delete DB during testing
+    try {
+      const threadsList = await client?.listThreads();
+      console.log(threadsList);
+      'bafkyykieq3n';
+      console.log('state.threadID', threadID.toString());
+
+      const exists = await client?.getDBInfo(threadID);
+      console.log('database already exists', exists);
+    } catch (err) {
+      console.log('DB not found', err);
+      await client?.newDB(threadID);
+      const afterCheck = await client?.getDBInfo(threadID);
+      console.log('afterCheck', afterCheck);
+    }
+  }
+  async function createDeckCollection(client: Client, threadID: ThreadID) {
+    try {
+      await client.find(threadID, 'Deck', {});
+    } catch {
+      console.log(`no 'Deck' collection found`);
+
+      await client.newCollection(threadID, 'Deck', deckSchema);
+    }
+  }
+  const client = await createClient(API_URL, jwt, keyPair);
+  if (client) {
+    await findOrCreateDB(client, threadID);
+    await createDeckCollection(client, threadID);
+  } else throw 'error connecting to ThreadDB client';
+  return client;
+};
+
+export { loginWithChallenge, connectClient, rehydrateKeyPair };

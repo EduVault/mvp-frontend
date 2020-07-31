@@ -9,21 +9,26 @@ import { RootState } from '../types';
 import authModule from './authModule';
 import decksModule from './decksModule';
 
-import defaultDeck from '@/assets/defaultDeck.json';
+// import defaultDeck from '@/assets/defaultDeck.json';
 
 // Hacky fix. For some reason when vuex-persist is combined with direct-vuex,
 // the store will get overwritten by default values.
-const setDefault = function(store: any) {
-  for (const deck of store.state.decksMod.decks) {
-    if (deck._id === '123') return null;
-  }
-  store.commit.decksMod.addDeck(defaultDeck);
-};
+// const setDefault = function(store: any) {
+//   for (const deck of store.state.decksMod.decks) {
+//     if (deck._id === '123') return null;
+//   }
+//   store.commit.decksMod.addDeck(defaultDeck);
+// };
 
 const vuexLocalForage = new VuexPersistence<RootState>({
   key: process.env.VUE_APP_STORAGE_KEY,
   storage: localForage,
-  reducer: state => ({ decksMod: state.decksMod }), // only save decks module
+  reducer: state => ({
+    decksMod: {
+      decks: state.decksMod.decks,
+      backlog: state.decksMod.backlog,
+    },
+  }), // only save decks module
   // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum
   asyncStorage: true,
 });
@@ -62,7 +67,7 @@ const {
   ],
 });
 //
-setDefault(store);
+// setDefault(store);
 // Export the direct-store instead of the classic Vuex store.
 export default store;
 

@@ -18,13 +18,17 @@ import store from './store';
 import AlertUpdatePWA from './components/AlertUpdatePWA.vue';
 export default {
   components: { AlertUpdatePWA },
-  computed: {
-    loggedIn() {
-      return store.getters.authMod.loggedIn;
-    },
+  data() {
+    return {
+      loggedIn: false,
+    };
+  },
+  mounted() {
+    this.loggedIn = store.state.authMod.loggedIn;
   },
   methods: {
     logout() {
+      this.loggedIn = false;
       store.dispatch.authMod.logout();
       store.commit.authMod.LOGGEDIN(false);
     },

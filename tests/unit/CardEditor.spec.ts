@@ -26,7 +26,7 @@ describe('CardEditor.vue', () => {
     localVue,
     propsData: {
       editPayload: {
-        deckTitle: 'MockTitle',
+        deckId: 'MockID',
         frontText: 'MockFrontText',
         backText: 'MockBackText',
         _id: '12f14f23',
@@ -64,7 +64,7 @@ describe('CardEditor.vue', () => {
     const expectedOutput = {
       frontText: 'frontOutputValue',
       backText: 'backOutputValue',
-      deckTitle: 'MockTitle',
+      deckId: 'MockID',
       _id: '12f14f23',
     };
     expect(JSON.stringify(wrapper.emitted().editCard[0][0])).toBe(JSON.stringify(expectedOutput));

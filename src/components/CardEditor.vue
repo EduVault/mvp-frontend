@@ -21,15 +21,15 @@
     </div>
     <div v-if="newCard">
       <div class="form__top-label">
-        Add card to deck: <strong class="form__top-label--strong">{{ selectedDeck }}</strong>
+        Add card to deck: <strong class="form__top-label--strong">{{ selectedDeck.title }}</strong>
       </div>
       <span v-show="decks.length > 1" class="tag-selection">
         <span class="tag-selection__title">Change deck:</span>
-        <span v-for="deck in decks" :key="deck.title" class="tag-selection__tag-span">
+        <span v-for="deck in decks" :key="deck._id" class="tag-selection__tag-span">
           <button
-            v-show="deck.title !== selectedDeck"
+            v-show="deck._id !== selectedDeck._id"
             class="tag-selection__tag"
-            @click="$emit('changeSelectedDeck', deck.title)"
+            @click="$emit('changeSelectedDeck', deck._id)"
           >
             {{ deck.title }}
           </button>
@@ -48,7 +48,7 @@ export default {
       type: Object,
       default: function() {
         return {
-          deckTitle: {
+          deckId: {
             type: String,
             default: '',
           },
@@ -68,8 +68,16 @@ export default {
       },
     },
     selectedDeck: {
-      type: String,
-      default: 'Default Deck',
+      type: Object,
+      default() {
+        return {
+          cards: [],
+          title: 'Default Deck',
+          _id: '',
+          deleted: false,
+          ttl: 1596161096048,
+        };
+      },
     },
     decks: {
       type: Array,
@@ -99,20 +107,26 @@ export default {
       }
     },
     addCard: function() {
-      const card = {
-        frontText: this.newFrontText,
-        backText: this.newBackText,
-        _id: uuid(),
-        deckTitle: this.selectedDeck,
+      const payload = {
+        card: {
+          frontText: this.newFrontText,
+          backText: this.newBackText,
+          _id: uuid(),
+          updatedAt: new Date().getTime(),
+        },
+        deckId: this.selectedDeck._id,
       };
-      this.$emit('addCard', card);
+      this.$emit('addCard', payload);
     },
     editCard: function() {
       const payload = {
-        frontText: this.newFrontText,
-        backText: this.newBackText,
-        _id: this.editPayload._id,
-        deckTitle: this.editPayload.deckTitle,
+        card: {
+          frontText: this.newFrontText,
+          backText: this.newBackText,
+          _id: this.editPayload._id,
+          updatedAt: new Date().getTime(),
+        },
+        deckId: this.editPayload.deckId,
       };
       this.$emit('editCard', payload);
     },

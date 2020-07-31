@@ -18,7 +18,7 @@ export default {
       emptyPayload: {
         frontText: '',
         backText: '',
-        deckTitle: '',
+        deckId: '',
         _id: '',
       },
     };

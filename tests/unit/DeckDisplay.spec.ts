@@ -65,7 +65,7 @@ describe('DeckDisplay.vue', () => {
       frontText: 'FrontText',
       backText: 'BackText',
       _id: '1',
-      deckTitle: 'Title',
+      deckId: 'Deck Id',
     };
     expect(JSON.stringify(wrapper.emitted().openEditor[0][0])).toBe(JSON.stringify(expectedOutput));
   });
@@ -74,7 +74,7 @@ describe('DeckDisplay.vue', () => {
     await deleteButton.trigger('click');
     const expectedOutput = {
       _id: '1',
-      deckTitle: 'Title',
+      deckId: 'deckId',
     };
     expect(JSON.stringify(wrapper.emitted().deleteCard[0][0])).toBe(JSON.stringify(expectedOutput));
   });

@@ -6,10 +6,7 @@ const PASSWORD_SIGNUP = '/auth/local-signup';
 const VERIFY_JWT = '/verify-jwt';
 const FACEBOOK_AUTH = '/auth/facebook';
 const GOOGLE_AUTH = '/auth/google';
-const BASE_URL =
-  process.env.NODE_ENV === 'production'
-    ? 'https://thirsty-ardinghelli-577c63.netlify.app'
-    : 'localhost:8080';
+
 export {
   STORAGE_KEY,
   DEV_API_URL,
@@ -19,5 +16,4 @@ export {
   VERIFY_JWT,
   FACEBOOK_AUTH,
   GOOGLE_AUTH,
-  BASE_URL,
 };

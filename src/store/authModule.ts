@@ -66,6 +66,7 @@ export default {
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
+            'X-Forwarded-Proto': 'https',
           },
           method: 'POST',
           data: {
@@ -145,6 +146,9 @@ export default {
       const options = {
         url: state.API_URL_ROOT + '/logout',
         method: 'GET',
+        headers: {
+          'X-Forwarded-Proto': 'https',
+        },
         withCredentials: true,
       } as AxiosRequestConfig;
       axios(options);
@@ -161,7 +165,9 @@ export default {
       try {
         const options = {
           url: state.API_URL_ROOT + '/auth-check',
-          headers: { 'Access-Control-Allow-Origin': '*' },
+          headers: {
+            'X-Forwarded-Proto': 'https',
+          },
           method: 'GET',
           withCredentials: true,
         } as AxiosRequestConfig;
@@ -244,7 +250,9 @@ export default {
       try {
         const options = {
           url: state.API_URL_ROOT + '/get-user',
-          headers: { 'Access-Control-Allow-Origin': '*' },
+          headers: {
+            'X-Forwarded-Proto': 'https',
+          },
           method: 'GET',
           withCredentials: true,
         } as AxiosRequestConfig;

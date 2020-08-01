@@ -99,20 +99,20 @@ export async function connectClient(
       const threadsList = await client.listThreads();
       console.log(threadsList);
       console.log('threadID', threadID.toString());
-      // const exists = await client?.getDBInfo(threadID);
+      const exists = await client.getDBInfo(threadID);
       console.log('database found');
     } catch (err) {
       console.log('database not found');
-      await client.newDB(threadID);
-      // const afterCheck = await client?.getDBInfo(threadID);
-      // console.log('afterCheck', afterCheck);
+      await client.newDB(threadID, 'EduVault');
+      const afterCheck = await client?.getDBInfo(threadID);
+      console.log('afterCheck', afterCheck);
     }
   }
   async function createDeckCollection(client: Client, threadID: ThreadID) {
     try {
       await client.find(threadID, 'Deck', {});
     } catch {
-      // console.log(`no 'Deck' collection found`);
+      console.log(`no 'Deck' collection found`);
       await client.newCollection(threadID, 'Deck', deckSchema);
     }
   }

@@ -1,4 +1,4 @@
-import { Deck } from '../types';
+import { Deck, User } from '../types';
 import { orderBy } from 'lodash';
 import CryptoJS from 'crypto-js';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
@@ -26,13 +26,13 @@ export function combineBacklog(decksRaw: Deck[], backlog: Deck[]) {
 
 export async function rehydrateKeyPair(
   encryptedKeyPair: string,
-  oldPubkey: string,
+  pubKey: string,
   decrpyter: string
 ) {
   const decryptedKeyPairBytes = CryptoJS.AES.decrypt(encryptedKeyPair, decrpyter);
   const decryptedKeyPairString = decryptedKeyPairBytes.toString(CryptoJS.enc.Utf8);
   const rehydratedKeyPair = await Libp2pCryptoIdentity.fromString(decryptedKeyPairString);
-  const testMatching = rehydratedKeyPair.public.toString() === oldPubkey;
+  const testMatching = rehydratedKeyPair.public.toString() === pubKey;
   // console.log('keys match: ', testMatching);
   if (!testMatching) throw 'Unable to decrypt keys from server';
   return rehydratedKeyPair;
@@ -60,4 +60,91 @@ export async function saveLoginData(loginData: any, password: string) {
     await store.commit.authMod.JWT_ENCRYPTED_KEYPAIR(jwtEncryptedKeyPair);
   if (store.state.authMod.pubKey !== loginData.pubKey)
     await store.commit.authMod.PUBKEY(loginData.pubKey);
+}
+
+export async function passwordResolveAuthCheck(
+  jwtEncryptedKeyPair: string | undefined,
+  pubKey: string | undefined,
+  threadIDStr: string | undefined,
+  stateJwt: string | undefined
+): Promise<boolean> {
+  if (!jwtEncryptedKeyPair || !pubKey || !threadIDStr) {
+    store.commit.authMod.LOGGEDIN(false);
+    console.log('couldnt find keys stored in local storage');
+    return false;
+  } else {
+    // If we refreshed the page and don't have a jwt, we'll need to request a new one
+    let jwt;
+    if (!stateJwt) {
+      const user = await store.dispatch.authMod.getUser();
+      jwt = user.jwt;
+    } else {
+      jwt = stateJwt;
+    }
+    if (!jwt) {
+      // if that failed, we'll need to login
+      store.commit.authMod.LOGGEDIN(false);
+      console.log('invalid jwt');
+      return false;
+    }
+    // if we have all the info we need, rehydrate them and start back up the DB connection.
+    const threadID = ThreadID.fromString(threadIDStr);
+    const rehydratedKeyPair = await rehydrateKeyPair(jwtEncryptedKeyPair, pubKey, jwt);
+    await store.commit.authMod.KEYPAIR(rehydratedKeyPair);
+    await store.commit.authMod.JWT(jwt);
+    await store.commit.authMod.THREAD_ID(threadID);
+
+    await store.commit.authMod.LOGGEDIN(true);
+    return true;
+  }
+}
+
+export async function socialMediaResolveAuthCheck(
+  jwtEncryptedKeyPair: string | undefined,
+  pubKey: string | undefined,
+  threadIDStr: string | undefined,
+  stateJwt: string | undefined,
+  authType: 'google' | 'facebook'
+): Promise<boolean> {
+  let jwt = stateJwt;
+  if (jwt && jwtEncryptedKeyPair && threadIDStr && pubKey) {
+    // check if we have jwtEncryptedKeyPair and threadIDStr and pubKey try to resolve from that
+    const threadID = ThreadID.fromString(threadIDStr);
+    const rehydratedKeyPair = await rehydrateKeyPair(jwtEncryptedKeyPair, pubKey, jwt);
+    await store.commit.authMod.KEYPAIR(rehydratedKeyPair);
+    await store.commit.authMod.THREAD_ID(threadID);
+    await store.commit.authMod.LOGGEDIN(true);
+    return true;
+  } else {
+    const user: User = await store.dispatch.authMod.getUser();
+    console.log(user);
+    const socialMediaKeyPair = user.socialMediaKeyPair;
+    const socialMediaID = user[authType]?.id;
+    const threadIDStr = user.threadIDStr;
+    const pubKey = user.pubKey;
+    jwt = user.jwt;
+    if (jwt && threadIDStr && socialMediaKeyPair && socialMediaID && pubKey) {
+      const threadID = ThreadID.fromString(threadIDStr);
+      const rehydratedKeyPair = await rehydrateKeyPair(socialMediaKeyPair, pubKey, socialMediaID);
+      await store.commit.authMod.KEYPAIR(rehydratedKeyPair);
+      await store.commit.authMod.THREAD_ID(threadID);
+      await store.commit.authMod.JWT(jwt);
+      await store.commit.authMod.THREAD_ID_STR(threadIDStr);
+      const jwtEncryptedKeyPair = CryptoJS.AES.encrypt(
+        rehydratedKeyPair.toString(),
+        jwt
+      ).toString();
+      await store.commit.authMod.JWT_ENCRYPTED_KEYPAIR(jwtEncryptedKeyPair);
+      await store.commit.authMod.PUBKEY(pubKey);
+      await store.commit.authMod.LOGGEDIN(true);
+      return true;
+    } else {
+      // if that failed, we'll need to login
+      store.commit.authMod.LOGGEDIN(false);
+      console.log('invalid jwt');
+      return false;
+    }
+  }
+
+  // if we don't, get the user, then use their socialMediaID, and socialMediaKeyPair to decrypt. set threadIDStr and threadID
 }

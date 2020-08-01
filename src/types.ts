@@ -3,6 +3,27 @@ import { Client, Database, Collection, ThreadID } from '@textile/hub';
 import { JSONSchema } from '@textile/threads-database';
 // import { DBInfo } from '@textile/threads';
 
+/** @param username will be an email for local scheme, for google and facebook will be email if available or id if not */
+export interface User {
+  username: string;
+  password?: string;
+  encryptedKeyPair?: string;
+  socialMediaKeyPair?: string;
+  pubKey?: string;
+  threadIDStr?: string;
+  DbInfo?: string;
+  facebook?: SocialMediaAccount;
+  google?: SocialMediaAccount;
+  jwt?: string;
+}
+interface SocialMediaAccount {
+  id?: string;
+  token?: string;
+  email?: string;
+  givenName?: string;
+  familyName?: string;
+  picture?: string;
+}
 /** @param ttl Time To Live. Please set at now plus 1.5e10 (half year)  Unix epoch date at which can we safely delete the card without worrying about sync issues */
 export interface Card {
   _id: string;

@@ -12,14 +12,15 @@
 
 <script>
 import { API_URL_ROOT, DEV_API_URL_ROOT, GOOGLE_AUTH } from '../config';
-
+import store from '../store';
 export default {
   methods: {
     openLink() {
+      store.commit.authMod.AUTHTYPE('google');
       window.location =
         process.env.NODE_ENV === 'production'
-          ? API_URL_ROOT + GOOGLE_AUTH
-          : DEV_API_URL_ROOT + GOOGLE_AUTH;
+          ? 'https://' + API_URL_ROOT + GOOGLE_AUTH
+          : 'http://' + DEV_API_URL_ROOT + GOOGLE_AUTH;
     },
   },
 };

@@ -33,6 +33,7 @@ const vuexLocalForage = new VuexPersistence<RootState>({
       jwtEncryptedKeyPair: state.authMod.jwtEncryptedKeyPair,
       pubKey: state.authMod.pubKey,
       threadIDStr: state.authMod.threadIDStr,
+      authType: state.authMod.authType,
     },
   }), // only save decks module
   // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum

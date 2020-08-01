@@ -7,7 +7,7 @@ import router from '@/router';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { ThreadID } from '@textile/hub';
 import CryptoJS from 'crypto-js';
-import { rehydrateKeyPair, saveLoginData } from './utils';
+import { saveLoginData, passwordResolveAuthCheck, socialMediaResolveAuthCheck } from './utils';
 import { API_URL_ROOT, PASSWORD_SIGNUP, DEV_API_URL_ROOT, PASSWORD_LOGIN } from '../config';
 import defaultDeck from '@/assets/defaultDeck.json';
 import { connectClient } from '../store/textileHelpers';
@@ -134,7 +134,7 @@ export default {
       store.commit.authMod.THREAD_ID(undefined);
     },
 
-    async checkAuth({ state }: ActionContext<AuthState, RootState>) {
+    async checkAuth({ state }: ActionContext<AuthState, RootState>): Promise<boolean | undefined> {
       try {
         const options = {
           url: state.API_URL + '/auth-check',
@@ -146,48 +146,31 @@ export default {
         } as AxiosRequestConfig;
 
         const authCheck = await axios(options);
-        // console.log('authcheck', authCheck);
-
         if (authCheck.data.code == 200) {
-          await ((store as unknown) as {
-            restored: Promise<unknown>;
-          }).restored;
           // if we don't have an identity, check for jwt and localstorage,
           if (state.keyPair) {
             store.commit.authMod.LOGGEDIN(true);
             return true;
           } else {
-            const jwtEncryptedKeyPair = state.jwtEncryptedKeyPair;
-            const pubKey = state.pubKey;
-            const threadIDStr = state.threadIDStr;
-            if (!jwtEncryptedKeyPair || !pubKey || !threadIDStr) {
-              store.commit.authMod.LOGGEDIN(false);
-              console.log('couldnt find keys stored in local storage');
-              return false;
-            } else {
-              // If we refreshed the page and don't have a jwt, we'll need to request a new one
-              let jwt;
-              if (!state.jwt) {
-                const user = await store.dispatch.authMod.getUser();
-                jwt = user.jwt;
-              } else {
-                jwt = state.jwt;
+            console.log(state.authType);
+            switch (state.authType) {
+              case 'password': {
+                return await passwordResolveAuthCheck(
+                  state.jwtEncryptedKeyPair,
+                  state.pubKey,
+                  state.threadIDStr,
+                  state.jwt
+                );
               }
-              if (!jwt) {
-                // if that failed, we'll need to login
-                store.commit.authMod.LOGGEDIN(false);
-                console.log('invalid jwt');
-                return false;
+              case 'google' || 'facebook': {
+                return socialMediaResolveAuthCheck(
+                  state.jwtEncryptedKeyPair,
+                  state.pubKey,
+                  state.threadIDStr,
+                  state.jwt,
+                  state.authType
+                );
               }
-              // if we have all the info we need, rehydrate them and start back up the DB connection.
-              const threadID = ThreadID.fromString(threadIDStr);
-              const rehydratedKeyPair = await rehydrateKeyPair(jwtEncryptedKeyPair, pubKey, jwt);
-              await store.commit.authMod.KEYPAIR(rehydratedKeyPair);
-              await store.commit.authMod.JWT(jwt);
-              await store.commit.authMod.THREAD_ID(threadID);
-
-              await store.commit.authMod.LOGGEDIN(true);
-              return true;
             }
           }
         } else {
@@ -212,6 +195,7 @@ export default {
           withCredentials: true,
         } as AxiosRequestConfig;
         const response = await axios(options);
+        console.log(response.data);
         if (!response.data || !response.data.data || !response.data.data.jwt) return null;
         else return response.data.data;
       } catch (err) {

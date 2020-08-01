@@ -125,9 +125,9 @@ export default {
           retry: 0,
         });
       else {
-        await store.dispatch.authMod.checkAuth();
-        startup(retry + 1);
-        if (retry >= 2) router.push('/login');
+        if (await store.dispatch.authMod.checkAuth()) startup(retry + 1);
+        else router.push('/login/?checkauth=no');
+        if (retry >= 2) router.push('/login/?checkauth=no');
       }
     }
     onMounted(async () => {

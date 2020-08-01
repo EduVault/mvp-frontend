@@ -124,7 +124,7 @@ export async function connectClient(
     await createDeckCollection(client, threadID);
     console.log('connected to DB');
   } else {
-    alert('error connecting to ThreadDB client');
+    throw 'error connecting to ThreadDB client';
     store.commit.authMod.SYNCING(false);
   }
   store.commit.authMod.SYNCING(false);

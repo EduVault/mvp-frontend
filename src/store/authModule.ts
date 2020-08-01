@@ -11,6 +11,7 @@ import { rehydrateKeyPair, saveLoginData } from './utils';
 import { API_URL_ROOT, PASSWORD_SIGNUP, DEV_API_URL_ROOT, PASSWORD_LOGIN } from '../config';
 import defaultDeck from '@/assets/defaultDeck.json';
 import { connectClient } from '../store/textileHelpers';
+import { conformsTo } from 'lodash';
 
 export default {
   namespaced: true as true,
@@ -180,19 +181,12 @@ export default {
               }
               // if we have all the info we need, rehydrate them and start back up the DB connection.
               const threadID = ThreadID.fromString(threadIDStr);
-              let rehydratedKeyPair;
-              try {
-                rehydratedKeyPair = await rehydrateKeyPair(jwtEncryptedKeyPair, pubKey, jwt);
-              } catch {
-                store.commit.authMod.LOGGEDIN(false);
-                console.log('error rehydrating keys');
-                return false;
-              }
-              store.commit.authMod.KEYPAIR(rehydratedKeyPair);
-              store.commit.authMod.JWT(jwt);
-              store.commit.authMod.THREAD_ID(threadID);
+              const rehydratedKeyPair = await rehydrateKeyPair(jwtEncryptedKeyPair, pubKey, jwt);
+              await store.commit.authMod.KEYPAIR(rehydratedKeyPair);
+              await store.commit.authMod.JWT(jwt);
+              await store.commit.authMod.THREAD_ID(threadID);
 
-              store.commit.authMod.LOGGEDIN(true);
+              await store.commit.authMod.LOGGEDIN(true);
               return true;
             }
           }
@@ -225,14 +219,22 @@ export default {
         return null;
       }
     },
-    async initialize() {
-      if (store.state.authMod.jwt && store.state.authMod.keyPair && store.state.authMod.threadID) {
+    async initialize(
+      { state }: ActionContext<AuthState, RootState>,
+      payload: {
+        jwt: string;
+        keyPair: Libp2pCryptoIdentity;
+        threadID: ThreadID;
+        retry: number;
+      }
+    ) {
+      if (payload.jwt && payload.keyPair && payload.threadID) {
         try {
           const client = await connectClient(
-            store.state.authMod.API_WS_URL + '/ws/auth',
-            store.state.authMod.jwt,
-            store.state.authMod.keyPair,
-            store.state.authMod.threadID
+            state.API_WS_URL + '/ws/auth',
+            payload.jwt,
+            payload.keyPair,
+            payload.threadID
           );
           if (client) {
             await store.commit.decksMod.CLIENT(client);
@@ -242,9 +244,21 @@ export default {
             await store.dispatch.decksMod.deckMergeToState(threadDeckInstances.instancesList);
           } else throw 'unable to connect to Threads DB';
         } catch (err) {
+          if (
+            err == 'unable to connect to Threads DB' ||
+            err == 'error connecting to ThreadDB client'
+          ) {
+            payload.retry++;
+            store.dispatch.authMod.initialize(payload);
+          }
           console.log(err);
         }
-      } else router.push('/login');
+      } else if (payload.retry > 1) {
+        router.push('/login');
+      } else {
+        payload.retry++;
+        store.dispatch.authMod.initialize(payload);
+      }
     },
   },
 };

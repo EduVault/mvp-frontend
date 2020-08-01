@@ -20,11 +20,10 @@ import decksModule from './decksModule';
 //   }
 //   store.commit.decksMod.addDeck(defaultDeck);
 // };
-
 const vuexLocalForage = new VuexPersistence<RootState>({
   key: STORAGE_KEY,
   storage: localForage,
-  restoreState: key => localForage.getItem(key),
+  restoreState: async (key, storage) => await localForage.getItem(key),
   reducer: state => ({
     decksMod: {
       decks: state.decksMod.decks,

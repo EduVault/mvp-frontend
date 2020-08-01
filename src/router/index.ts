@@ -10,7 +10,7 @@ async function reHydrateStorage(to: Route, from: Route, next: any) {
   // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum
   // restored is a promise, when fulfilled means state is restored
   await (store as any).original.restored;
-
+  await (store as any).restored;
   next();
 }
 
@@ -18,12 +18,10 @@ async function reHydrateStorage(to: Route, from: Route, next: any) {
 async function checkAuthValid(to: Route, from: Route, next: any) {
   if (to.query.checkauth === 'no' && to.path.includes('login')) {
     next();
-    return null;
   }
   const verified = await store.dispatch.authMod.checkAuth();
   if (verified && to.path.includes('login')) {
     next('/home');
-    return null;
   } else if (verified) {
     next();
   } else {

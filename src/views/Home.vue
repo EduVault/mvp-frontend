@@ -45,10 +45,11 @@
 </template>
 
 <script lang="ts">
-import { reactive, computed, onBeforeMount } from '@vue/composition-api';
+import { reactive, computed, onBeforeMount, onMounted } from '@vue/composition-api';
 
 import { Deck, EditCardPayload } from '@/types';
 import store from '../store';
+import router from '../router';
 import defaultDeck from '../assets/defaultDeck.json';
 
 import CardEditor from '@/components/CardEditor.vue';
@@ -65,9 +66,6 @@ export default {
     onBeforeMount(() => {
       if (store.state.decksMod.decks.length < 1) store.commit.decksMod.DECKS([defaultDeck]);
     });
-
-    //connect and sync to DB
-    store.dispatch.authMod.initialize();
 
     const decks = computed(() => {
       // console.log('decks changed');
@@ -117,7 +115,24 @@ export default {
       else state.editPayload = emptyPayload;
       state.showCardEditor = true;
     };
-
+    //connect and sync to DB
+    async function startup(retry: number) {
+      if (store.state.authMod.jwt && store.state.authMod.keyPair && store.state.authMod.threadID)
+        store.dispatch.authMod.initialize({
+          jwt: store.state.authMod.jwt,
+          keyPair: store.state.authMod.keyPair,
+          threadID: store.state.authMod.threadID,
+          retry: 0,
+        });
+      else {
+        await store.dispatch.authMod.checkAuth();
+        startup(retry + 1);
+        if (retry >= 2) router.push('/login');
+      }
+    }
+    onMounted(async () => {
+      await startup(0);
+    });
     return {
       decks,
       state,

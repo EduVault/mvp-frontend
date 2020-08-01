@@ -23,7 +23,7 @@ import decksModule from './decksModule';
 const vuexLocalForage = new VuexPersistence<RootState>({
   key: STORAGE_KEY,
   storage: localForage,
-  restoreState: async (key, storage) => await localForage.getItem(key),
+  restoreState: async key => await localForage.getItem(key),
   reducer: state => ({
     decksMod: {
       decks: state.decksMod.decks,

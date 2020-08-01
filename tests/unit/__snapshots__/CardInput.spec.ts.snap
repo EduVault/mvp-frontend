@@ -95,7 +95,7 @@ exports[`CardImport.Vue matches snapshot 1`] = `
     <svg
       aria-hidden="true"
       class="card-input__add-icon button svg-inline--fa fa-plus-square fa-w-14 fa-2x"
-      color="rgb(46, 204, 113)"
+      color="#42b983"
       data-icon="plus-square"
       data-prefix="fas"
       focusable="false"

@@ -1,9 +1,10 @@
-import { DecksState, RootState, Deck, DeleteCardPayload, EditCardPayload, Card } from '../types';
+import { DecksState, RootState, Deck, EditCardPayload, Card } from '../types';
 import { ActionContext } from 'vuex';
 import { InstanceList, Instance } from '@textile/threads-client/dist/models/query';
 import store from './index';
 import { Collection, Client } from '@textile/hub';
 import { combineBacklog } from './utils';
+
 export default {
   namespaced: true as true,
   state: {
@@ -11,7 +12,7 @@ export default {
   } as DecksState,
   getters: {
     decks: (state: DecksState) => {
-      console.log('decks changed in store');
+      // console.log('decks changed in store');
       return state.decks;
     },
   },
@@ -22,13 +23,26 @@ export default {
     DECK_COLLECTION(state: DecksState, collection: Collection<Deck>) {
       state.deckCollection = collection;
     },
-    BACKLOG(state: DecksState, log: Deck[]) {
-      state.backlog = log;
+
+    /** Appends decks to the backlog */
+    addToBacklog(state: DecksState, log: Deck[]) {
+      console.log('adding to backlog', log);
+      const newLog = [];
+      if (!state.backlog) state.backlog = [];
+      const joined = state.backlog.concat(log);
+      console.log('joined', joined);
+      state.backlog = joined;
+    },
+    /** removes the passed in deck IDs from the backlog */
+    removeFromBacklog(state: DecksState, IDs: string[]) {
+      const newLog = [];
+      if (!state.backlog) state.backlog = [];
+      return state.backlog.map(deck => !IDs.includes(deck._id));
     },
     /** Add or update a list of decks */
     DECKS(state: DecksState, decks: Deck[]) {
       decks.forEach(deck => {
-        const exists = state.decks.filter(statedeck => statedeck._id === deck._id).length > 0;
+        const exists = state.decks.map(stateDeck => stateDeck._id).includes(deck._id);
         if (!exists) state.decks.push(deck);
         else
           state.decks.forEach(stateDeck => {
@@ -60,31 +74,14 @@ export default {
       }
     },
 
-    deleteCard(state: DecksState, payload: DeleteCardPayload) {
-      for (const deck of state.decks) {
-        if (deck._id === payload.deckId) {
-          for (const card of deck.cards) {
-            if (card._id === payload._id) {
-              const replaceCard = { ...card };
-              replaceCard.deleted = true;
-              replaceCard.ttl = new Date().getTime() + 1.5e10;
-              deck.cards.splice(deck.cards.indexOf(card), 1, replaceCard);
-              deck.updatedAt = new Date().getTime();
-              console.log('card deleted, card, deck', card, deck);
-              break;
-            }
-          }
-          break;
-        }
-      }
-    },
-
     editCard(state: DecksState, payload: EditCardPayload) {
       state.decks.forEach(stateDeck => {
         if (stateDeck._id === payload.deckId) {
           stateDeck.cards.forEach(stateCard => {
             if (stateCard._id === payload.card._id) {
-              stateCard = payload.card;
+              const replaceCard = { ...payload.card };
+              stateDeck.updatedAt = new Date().getTime();
+              stateDeck.cards.splice(stateDeck.cards.indexOf(stateCard), 1, replaceCard);
               return;
             }
           });
@@ -102,14 +99,6 @@ export default {
           break;
         }
       }
-    },
-    async deleteCard({ state }: ActionContext<DecksState, RootState>, payload: DeleteCardPayload) {
-      await store.commit.decksMod.deleteCard(payload);
-      state.decks.forEach(deck => {
-        if (deck._id == payload.deckId) {
-          store.dispatch.decksMod.deckMergeToThread([deck]);
-        }
-      });
     },
     async editCard({ state }: ActionContext<DecksState, RootState>, payload: EditCardPayload) {
       await store.commit.decksMod.editCard(payload);
@@ -139,8 +128,8 @@ export default {
       console.log('merging decks to state. decks, state decks', decks, stateDecks);
       const updateList: Deck[] = [];
       decks.forEach(deck => {
-        const exists = stateDecks.filter(stateDeck => stateDeck._id === deck._id).length > 0;
-        console.log('deck exists: ', exists);
+        const exists = stateDecks.map(stateDeck => stateDeck._id).includes(deck._id);
+        // console.log('deck exists: ', exists);
         if (!exists) updateList.push(deck);
         else
           stateDecks.forEach(stateDeck => {
@@ -164,24 +153,22 @@ export default {
         instanceList = await store.dispatch.decksMod.getAllDeckInstances();
       } catch (err) {
         console.log(err);
-        const backlog: Deck[] = [];
-        if (state.backlog) backlog.concat(state.backlog);
-        backlog.concat(decksRaw);
-        store.commit.decksMod.BACKLOG(backlog);
+        store.commit.decksMod.addToBacklog(decksRaw);
+        console.log('state.backlog', state.backlog);
       }
       if (!instanceList) throw 'deck instance list not found';
-      // combine backlog and current
+      // combine backlog into current
       let decks = decksRaw;
+      console.log('state.backlog', state.backlog);
       if (state.backlog && state.backlog.length > 0) {
         decks = combineBacklog(decks, state.backlog);
       }
-
       const threadDecks = instanceList.instancesList;
-      console.log('existingInstances', threadDecks);
+      // console.log('existingInstances', threadDecks);
       const decksToCreate: Deck[] = [];
       const decksToUpdate: Deck[] = [];
       decks.forEach(deck => {
-        const exists = threadDecks.filter(threadDeck => threadDeck._id === deck._id).length > 0;
+        const exists = threadDecks.map(threadDeck => threadDeck._id).includes(deck._id);
         if (!exists) decksToCreate.push(deck);
         else
           threadDecks.forEach(existingDeck => {
@@ -190,9 +177,12 @@ export default {
             }
           });
       });
-      console.log('decks to merge to thread', decksToCreate, decksToUpdate);
+      // console.log('decks to merge to thread', decksToCreate, decksToUpdate);
       if (decksToCreate.length > 0 || decksToUpdate.length > 0)
         try {
+          if (!store.state.authMod.threadID) throw 'no threadID';
+          store.commit.authMod.SYNCING(true);
+
           const createdDecks = await state.client.create(
             store.state.authMod.threadID,
             'Deck',
@@ -203,30 +193,47 @@ export default {
             'Deck',
             decksToUpdate
           );
-          console.log('createdDecks, updatedDecks', createdDecks, updatedDecks);
+          // update doesn't return anything
+          console.log(
+            'createdDecks, updatedDecks',
+            createdDecks,
+            decksToUpdate.map(deck => deck._id)
+          );
+          store.commit.decksMod.removeFromBacklog(
+            createdDecks.concat(decksToUpdate.map(deck => deck._id))
+          );
+          store.commit.authMod.SYNCING(false);
         } catch (err) {
           console.log(err);
-          store.commit.decksMod.BACKLOG(decks);
+          store.commit.decksMod.addToBacklog(decks);
+          store.commit.authMod.SYNCING(false);
         }
     },
     async getAllDeckInstances({
       state,
     }: ActionContext<DecksState, RootState>): Promise<InstanceList<Deck>> {
+      if (!store.state.authMod.threadID) throw 'no threadID';
       const response = await state.client.find<Deck>(store.state.authMod.threadID, 'Deck', {});
-      console.log('getAllDeckInstances response', response);
+      // console.log('getAllDeckInstances response', response);
       return response;
     },
     async setUpListening({ state }: ActionContext<DecksState, RootState>) {
+      if (!store.state.authMod.threadID) throw 'no threadID';
       console.log('setting up listening');
       state.client.listen(
         store.state.authMod.threadID,
         [{ collectionName: 'Deck' }],
         async (reply?: Instance<Deck>, err?) => {
+          store.commit.authMod.SYNCING(true);
+
           if (err) {
             console.log(err);
           } else {
-            console.log('instance changed remotely', reply);
-            if (reply?.instance) await store.dispatch.decksMod.deckMergeToState([reply.instance]);
+            // console.log('instance changed remotely', reply);
+            if (reply?.instance) {
+              store.dispatch.decksMod.deckMergeToState([reply.instance]);
+              store.commit.authMod.SYNCING(false);
+            }
           }
         }
       );

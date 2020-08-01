@@ -44,7 +44,19 @@
           class="buttons-col__button buttons-col__button--delete button"
           size="2x"
           icon="trash-alt"
-          @click="$emit('deleteCard', { _id: card._id, deckId: deck._id })"
+          @click="
+            $emit('deleteCard', {
+              card: {
+                frontText: card.frontText,
+                backText: card.backText,
+                _id: card._id,
+                deleted: true,
+                ttl: new Date().getTime() + 1.5e10,
+              },
+
+              deckId: deck._id,
+            })
+          "
         />
       </div>
     </div>

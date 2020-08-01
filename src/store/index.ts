@@ -24,10 +24,16 @@ import decksModule from './decksModule';
 const vuexLocalForage = new VuexPersistence<RootState>({
   key: STORAGE_KEY,
   storage: localForage,
+  restoreState: key => localForage.getItem(key),
   reducer: state => ({
     decksMod: {
       decks: state.decksMod.decks,
       backlog: state.decksMod.backlog,
+    },
+    authMod: {
+      jwtEncryptedKeyPair: state.authMod.jwtEncryptedKeyPair,
+      pubKey: state.authMod.pubKey,
+      threadIDStr: state.authMod.threadIDStr,
     },
   }), // only save decks module
   // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum

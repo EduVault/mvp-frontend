@@ -57,24 +57,21 @@ export interface EditCardPayload {
   card: Card;
   deckId: string;
 }
-export interface DeleteCardPayload {
-  _id: string;
-  deckId: string;
-}
+
 export interface AuthState {
-  API_URL_ROOT: string;
+  API_URL: string;
   API_WS_URL: string;
   PASSWORD_SIGNUP: string;
   PASSWORD_LOGIN: string;
   loggedIn: boolean;
-  keyPair: Libp2pCryptoIdentity;
-  authType: 'google' | 'facebook' | 'password' | undefined;
-  jwt: string | undefined;
-  pubKey: string | undefined;
-  threadID: ThreadID;
-  // deckCollection: Collection<Deck>;
-  // db: Database;
-  // DbInfo: DBInfo;
+  syncing: boolean;
+  keyPair?: Libp2pCryptoIdentity;
+  authType?: 'google' | 'facebook' | 'password';
+  jwt?: string;
+  pubKey?: string;
+  threadID?: ThreadID;
+  threadIDStr?: string;
+  jwtEncryptedKeyPair?: string;
 }
 export interface DecksState {
   decks: Deck[];

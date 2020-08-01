@@ -15,15 +15,14 @@ import {
   faEdit,
   faTimes,
   faSpinner,
+  faSync,
+  faCloud,
 } from '@fortawesome/free-solid-svg-icons';
-import {
-  FontAwesomeIcon,
-  //  FontAwesomeLayers
-} from '@fortawesome/vue-fontawesome';
-library.add(faTrashAlt, faPlusSquare, faCheck, faEdit, faTimes, faSpinner);
+import { FontAwesomeIcon, FontAwesomeLayers } from '@fortawesome/vue-fontawesome';
+library.add(faTrashAlt, faPlusSquare, faCheck, faEdit, faTimes, faSpinner, faSync, faCloud);
 
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-// Vue.component('font-awesome-layers', FontAwesomeLayers);
+Vue.component('font-awesome-layers', FontAwesomeLayers);
 Vue.config.productionTip = false;
 
 import VueCompositionApi from '@vue/composition-api';

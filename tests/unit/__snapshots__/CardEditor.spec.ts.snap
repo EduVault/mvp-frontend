@@ -49,7 +49,7 @@ exports[`CardEditor.vue matches snapshot 1`] = `
     <svg
       aria-hidden="true"
       class="form__button button form__button--confirm svg-inline--fa fa-check fa-w-16 fa-2x"
-      color="rgb(46, 204, 113)"
+      color="#42b983"
       data-icon="check"
       data-prefix="fas"
       focusable="false"

@@ -10,8 +10,7 @@
         @click="$emit('closeDeckEditor')"
       ></font-awesome-icon>
       <font-awesome-icon
-        class="form__button button form__button--confirm"
-        color="rgb(46, 204, 113)"
+        class="form__button button form__button--confirm  primary"
         icon="check"
         size="2x"
         @click="newTitle !== '' ? createDeck() : null"

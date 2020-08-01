@@ -22,6 +22,14 @@ UTILITIES
   border-radius: 10px;
 }
 
+.primary {
+  color: $primary
+}
+
+.secondary {
+  color: $secondary
+}
+
 /* ---------------------------------------------
 
 GLOBALS
@@ -57,8 +65,26 @@ COMPONENTS === BLOCKS __ELEMENTS --MODIFIERS
   block-name__element-name--modifier-name--modifier-value
 
 ------------------------------------------------ */
+.app__nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 25px;
+  text-align: center;
+  width: 100%;
+  background-color: $secondary;
 
-.home__section {
+  &__link {
+    font-weight: bold;
+    color: white;
+    padding: 5px 10px;
+
+    &.router-link-exact-active {
+      color: $primary;
+    }
+  }
+}
+
+.home-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
@@ -85,27 +111,27 @@ COMPONENTS === BLOCKS __ELEMENTS --MODIFIERS
   }
 }
 
-.top-button-div {
-  display: flex;
+.form {
+  &__top-label {
+    margin: 0.5rem 0;
+  }
+
+  &__text-input {
+    min-width: 80%;
+  }
+
+  &__button-row {
+    margin: 15px 0;
+    display: flex;
+    justify-content: space-around;
+  }
+
+  &__button {
+    cursor: pointer;
+  }
 }
 
-.form__top-label {
-  margin: 0.5rem 0;
-}
 
-.form__text-input {
-  min-width: 80%;
-}
-
-.form__button-row {
-  margin: 15px 0;
-  display: flex;
-  justify-content: space-around;
-}
-
-.form__button {
-  cursor: pointer;
-}
 
 .editor {
   z-index: 5000;

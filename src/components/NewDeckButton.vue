@@ -1,9 +1,8 @@
 <template>
-  <div class="top-button-div">
+  <div class="d-flex">
     <h2 class="mr-3">Deck</h2>
     <font-awesome-icon
-      class="button"
-      color="rgb(46, 204, 113)"
+      class="button primary"
       icon="plus-square"
       size="2x"
       @click="$emit('newDeck')"

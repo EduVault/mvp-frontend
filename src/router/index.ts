@@ -5,15 +5,29 @@ import Login from '../views/Login.vue';
 import Home from '../views/Home.vue';
 Vue.use(VueRouter);
 
+/**undocumented bug in vuex-persist with localforage. Hacky fix from issues forum */
+async function reHydrateStorage(to: Route, from: Route, next: any) {
+  // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum
+  // restored is a promise, when fulfilled means state is restored
+  await (store as any).original.restored;
+
+  next();
+}
+
 /**More strict check */
-async function checkAuthValid(to: any, from: any, next: any) {
-  // console.log('jwt check valid to', to);
+async function checkAuthValid(to: Route, from: Route, next: any) {
+  if (to.query.checkauth === 'no' && to.path.includes('login')) {
+    next();
+    return null;
+  }
   const verified = await store.dispatch.authMod.checkAuth();
-  // console.log('verified', verified);
-  if (verified) {
+  if (verified && to.path.includes('login')) {
+    next('/home');
+    return null;
+  } else if (verified) {
     next();
   } else {
-    next('/login');
+    next('/login/?checkauth=no');
   }
 }
 
@@ -22,7 +36,6 @@ const routes: Array<RouteConfig> = [
     path: '/',
     name: 'Root',
     redirect: '/home',
-    beforeEnter: checkAuthValid,
   },
   {
     path: '/login',
@@ -33,7 +46,6 @@ const routes: Array<RouteConfig> = [
     path: '/home',
     name: 'Home',
     component: Home,
-    beforeEnter: checkAuthValid,
   },
 ];
 
@@ -43,11 +55,8 @@ const router = new VueRouter({
   routes,
 });
 
-const waitForStorageToBeReady = async (to: any, from: any, next: () => void) => {
-  // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum
-  await ((store as unknown) as { restored: Promise<unknown> }).restored;
-  next();
-};
-router.beforeEach(waitForStorageToBeReady);
-
+router.beforeEach(async (to: Route, from: Route, next: any) => {
+  await reHydrateStorage(to, from, next);
+  await checkAuthValid(to, from, next);
+});
 export default router;

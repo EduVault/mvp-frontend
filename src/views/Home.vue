@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <section class="home__section editing-section">
+    <section class="home-section editing-section">
       <new-deck-button @newDeck="state.showDeckEditor = true"></new-deck-button>
       <new-card-button
         @newCard="
@@ -15,7 +15,7 @@
         @closeDeckEditor="state.showDeckEditor = false"
       ></deck-editor>
     </section>
-    <section class="home__section display-section">
+    <section class="home-section display-section">
       <deck-display
         v-for="deck in decks"
         :key="deck._id"
@@ -45,11 +45,11 @@
 </template>
 
 <script lang="ts">
-import { reactive, computed } from '@vue/composition-api';
+import { reactive, computed, onBeforeMount } from '@vue/composition-api';
 
-import { Deck, DeleteCardPayload, EditCardPayload } from '@/types';
-
+import { Deck, EditCardPayload } from '@/types';
 import store from '../store';
+import defaultDeck from '../assets/defaultDeck.json';
 
 import CardEditor from '@/components/CardEditor.vue';
 import DeckEditor from '@/components/DeckEditor.vue';
@@ -60,9 +60,17 @@ import NewDeckButton from '@/components/NewDeckButton.vue';
 export default {
   name: 'ComposVuexPersist',
   components: { DeckDisplay, DeckEditor, CardEditor, NewCardButton, NewDeckButton },
+
   setup() {
+    onBeforeMount(() => {
+      if (store.state.decksMod.decks.length < 1) store.commit.decksMod.DECKS([defaultDeck]);
+    });
+
+    //connect and sync to DB
+    store.dispatch.authMod.initialize();
+
     const decks = computed(() => {
-      console.log('decks changed');
+      // console.log('decks changed');
       return store.getters.decksMod.decks.filter(deck => !deck.deleted);
     });
 
@@ -79,7 +87,6 @@ export default {
     });
 
     const createDeck = async function(deck: Deck) {
-      console.log('create deck', deck);
       await store.dispatch.decksMod.deckMergeToState([deck]);
       state.selectedDeck = deck;
       state.showDeckEditor = false;
@@ -97,8 +104,8 @@ export default {
       state.showCardEditor = false;
       state.newCard = false;
     };
-    const deleteCard = (payload: DeleteCardPayload) => {
-      store.dispatch.decksMod.deleteCard(payload);
+    const deleteCard = (payload: EditCardPayload) => {
+      store.dispatch.decksMod.editCard(payload);
     };
     const changeSelectedDeck = (deckId: string) => {
       decks.value.forEach(deck => {

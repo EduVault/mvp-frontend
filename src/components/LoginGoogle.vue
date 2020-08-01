@@ -17,7 +17,7 @@ export default {
   methods: {
     openLink() {
       store.commit.authMod.AUTHTYPE('google');
-      window.location =
+      window.location.href =
         process.env.NODE_ENV === 'production'
           ? 'https://' + API_URL_ROOT + GOOGLE_AUTH
           : 'http://' + DEV_API_URL_ROOT + GOOGLE_AUTH;

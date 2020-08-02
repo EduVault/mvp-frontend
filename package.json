@@ -38,6 +38,9 @@
     "core-js": "^3.6.4",
     "crypto-js": "^4.0.0",
     "direct-vuex": "^0.11.0",
+    "eth-sig-util": "^2.3.0",
+    "ethereumjs-util": "^5.1.1",
+    "ethjs": "^0.3.0",
     "js-cookie": "^2.2.1",
     "localforage": "^1.7.3",
     "lodash": "^4.17.19",
@@ -55,6 +58,7 @@
   },
   "devDependencies": {
     "@types/crypto-js": "^3.1.47",
+    "@types/ethereumjs-util": "^6.1.0",
     "@types/jest": "^24.0.19",
     "@types/js-cookie": "^2.2.6",
     "@types/lodash": "^4.14.158",

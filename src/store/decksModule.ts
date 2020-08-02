@@ -5,11 +5,18 @@ import store from './index';
 import { Collection, Client } from '@textile/hub';
 import { combineBacklog } from './utils';
 
+const defaultState: DecksState = {
+  decks: [] as Deck[],
+  backlog: [] as Deck[],
+  client: undefined,
+  deckCollection: undefined,
+};
+const getDefaultState = () => {
+  return defaultState;
+};
 export default {
   namespaced: true as true,
-  state: {
-    decks: [] as Deck[],
-  } as DecksState,
+  state: getDefaultState(),
   getters: {
     decks: (state: DecksState) => {
       // console.log('decks changed in store');
@@ -17,6 +24,9 @@ export default {
     },
   },
   mutations: {
+    CLEAR_STATE(state: DecksState) {
+      Object.assign(state, getDefaultState());
+    },
     CLIENT(state: DecksState, client: Client) {
       state.client = client;
     },
@@ -150,6 +160,7 @@ export default {
       console.log(`merging decks to thread`, decksRaw);
       let instanceList;
       try {
+        if (!state.client) throw 'client not connected';
         instanceList = await store.dispatch.decksMod.getAllDeckInstances();
       } catch (err) {
         console.log(err);
@@ -180,7 +191,7 @@ export default {
       // console.log('decks to merge to thread', decksToCreate, decksToUpdate);
       if (decksToCreate.length > 0 || decksToUpdate.length > 0)
         try {
-          if (!store.state.authMod.threadID) throw 'no threadID';
+          if (!store.state.authMod.threadID || !state.client) throw 'no threadID or client';
           store.commit.authMod.SYNCING(true);
 
           const createdDecks = await state.client.create(
@@ -212,13 +223,13 @@ export default {
     async getAllDeckInstances({
       state,
     }: ActionContext<DecksState, RootState>): Promise<InstanceList<Deck>> {
-      if (!store.state.authMod.threadID) throw 'no threadID';
+      if (!store.state.authMod.threadID || !state.client) throw 'no threadID or client';
       const response = await state.client.find<Deck>(store.state.authMod.threadID, 'Deck', {});
       // console.log('getAllDeckInstances response', response);
       return response;
     },
     async setUpListening({ state }: ActionContext<DecksState, RootState>) {
-      if (!store.state.authMod.threadID) throw 'no threadID';
+      if (!store.state.authMod.threadID || !state.client) throw 'no threadID or client';
       console.log('setting up listening');
       state.client.listen(
         store.state.authMod.threadID,

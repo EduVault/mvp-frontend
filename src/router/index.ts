@@ -17,13 +17,13 @@ async function reHydrateStorage(to: Route, from: Route, next: any) {
 /**More strict check */
 async function checkAuthValid(to: Route, from: Route, next: any) {
   if (to.query.checkauth === 'no' && to.path.includes('login')) {
-    next('/login/?checkauth=no');
+    next();
     return null;
   }
   const verified = await store.dispatch.authMod.checkAuth();
   console.log(verified);
   if (verified) {
-    next('/home');
+    next();
     return null;
   } else {
     next('/login/?checkauth=no');

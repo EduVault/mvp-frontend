@@ -82,12 +82,11 @@ export interface EditCardPayload {
 export interface AuthState {
   API_URL: string;
   API_WS_URL: string;
-  PASSWORD_SIGNUP: string;
   PASSWORD_LOGIN: string;
   loggedIn: boolean;
   syncing: boolean;
   keyPair?: Libp2pCryptoIdentity;
-  authType?: 'google' | 'facebook' | 'password';
+  authType?: 'google' | 'facebook' | 'password' | 'metamask';
   jwt?: string;
   pubKey?: string;
   threadID?: ThreadID;
@@ -96,8 +95,8 @@ export interface AuthState {
 }
 export interface DecksState {
   decks: Deck[];
-  client: Client;
-  deckCollection: Collection<Deck>;
+  client?: Client;
+  deckCollection?: Collection<Deck>;
   backlog?: Deck[];
 }
 export interface RootState {

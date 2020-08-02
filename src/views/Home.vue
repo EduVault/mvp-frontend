@@ -66,6 +66,28 @@ export default {
     onBeforeMount(() => {
       if (store.state.decksMod.decks.length < 1) store.commit.decksMod.DECKS([defaultDeck]);
     });
+    onMounted(() => {
+      function startup(retry: number) {
+        if (retry >= 2) router.push('/login/?checkauth=no');
+        else if (
+          store.state.authMod.jwt &&
+          store.state.authMod.keyPair &&
+          store.state.authMod.threadID
+        )
+          store.dispatch.authMod.initialize({
+            jwt: store.state.authMod.jwt,
+            keyPair: store.state.authMod.keyPair,
+            threadID: store.state.authMod.threadID,
+            retry: 0,
+          });
+        else {
+          store.dispatch.authMod.checkAuth().then(result => {
+            if (!result) startup(retry + 1);
+          });
+        }
+      }
+      startup(0);
+    });
 
     const decks = computed(() => {
       // console.log('decks changed');
@@ -115,24 +137,7 @@ export default {
       else state.editPayload = emptyPayload;
       state.showCardEditor = true;
     };
-    //connect and sync to DB
-    async function startup(retry: number) {
-      if (store.state.authMod.jwt && store.state.authMod.keyPair && store.state.authMod.threadID)
-        store.dispatch.authMod.initialize({
-          jwt: store.state.authMod.jwt,
-          keyPair: store.state.authMod.keyPair,
-          threadID: store.state.authMod.threadID,
-          retry: 0,
-        });
-      else {
-        if (await store.dispatch.authMod.checkAuth()) startup(retry + 1);
-        else router.push('/login/?checkauth=no');
-        if (retry >= 2) router.push('/login/?checkauth=no');
-      }
-    }
-    onMounted(async () => {
-      await startup(0);
-    });
+
     return {
       decks,
       state,

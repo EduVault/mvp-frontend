@@ -8,33 +8,46 @@ import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { ThreadID } from '@textile/hub';
 import CryptoJS from 'crypto-js';
 import { saveLoginData, passwordResolveAuthCheck, socialMediaResolveAuthCheck } from './utils';
-import { API_URL_ROOT, PASSWORD_SIGNUP, DEV_API_URL_ROOT, PASSWORD_LOGIN } from '../config';
+import { API_URL_ROOT, DEV_API_URL_ROOT, PASSWORD_LOGIN } from '../config';
 import defaultDeck from '@/assets/defaultDeck.json';
 import { connectClient } from '../store/textileHelpers';
-
+import localForage from 'localforage';
 import Vue from 'vue';
 import VueCookies from 'vue-cookies';
 Vue.use(VueCookies);
 
+const defaultState: AuthState = {
+  loggedIn: false,
+  syncing: false,
+  API_URL:
+    process.env.NODE_ENV === 'production'
+      ? 'https://' + API_URL_ROOT
+      : 'http://' + DEV_API_URL_ROOT,
+  API_WS_URL:
+    process.env.NODE_ENV === 'production' ? 'wss://' + API_URL_ROOT : 'ws://' + DEV_API_URL_ROOT,
+  PASSWORD_LOGIN: PASSWORD_LOGIN,
+  keyPair: undefined,
+  authType: undefined,
+  jwt: undefined,
+  pubKey: undefined,
+  threadID: undefined,
+  threadIDStr: undefined,
+  jwtEncryptedKeyPair: undefined,
+};
+const getDefaultState = () => {
+  return defaultState;
+};
 export default {
   namespaced: true as true,
-  state: {
-    loggedIn: false,
-    syncing: false,
-    API_URL:
-      process.env.NODE_ENV === 'production'
-        ? 'https://' + API_URL_ROOT
-        : 'http://' + DEV_API_URL_ROOT,
-    API_WS_URL:
-      process.env.NODE_ENV === 'production' ? 'wss://' + API_URL_ROOT : 'ws://' + DEV_API_URL_ROOT,
-    PASSWORD_SIGNUP: PASSWORD_SIGNUP,
-    PASSWORD_LOGIN: PASSWORD_LOGIN,
-  } as AuthState,
+  state: getDefaultState(),
   getters: {
     loggedIn: (state: AuthState) => state.loggedIn,
     syncing: (state: AuthState) => state.syncing,
   },
   mutations: {
+    CLEAR_STATE(state: AuthState) {
+      Object.assign(state, getDefaultState());
+    },
     AUTHTYPE(state: AuthState, type: 'google' | 'facebook' | 'password') {
       state.authType = type;
     },
@@ -70,6 +83,7 @@ export default {
     ) {
       try {
         const options = {
+          url: state.API_URL + state.PASSWORD_LOGIN,
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
@@ -93,12 +107,11 @@ export default {
           options.data.threadIDStr = newThreadID.toString();
           options.data.encryptedKeyPair = encryptedKeyPair;
           options.data.pubKey = pubKey;
-          options.url = state.API_URL + state.PASSWORD_SIGNUP;
-        } else options.url = options.url = state.API_URL + state.PASSWORD_LOGIN;
+        }
 
         const response = await axios(options);
         const responseData = response.data;
-        console.log('login cookie: ' + JSON.stringify(Vue.$cookies.get('eduvault.sess')));
+        console.log('login cookie: ' + JSON.stringify(Vue.$cookies.get('koa.sess')));
         console.log('login/signup data: ' + JSON.stringify(responseData));
         if (responseData.code !== 200) {
           if (responseData.message) return responseData.message;
@@ -118,40 +131,37 @@ export default {
         else return 'Issue connecting to database';
       }
     },
-
     async logout({ state }: ActionContext<AuthState, RootState>) {
-      const options = {
+      const options: AxiosRequestConfig = {
         url: state.API_URL + '/logout',
         method: 'GET',
         headers: {
           'X-Forwarded-Proto': 'https',
         },
         withCredentials: true,
-      } as AxiosRequestConfig;
+      };
       axios(options);
-      store.commit.authMod.JWT(undefined);
-      store.commit.authMod.PUBKEY(undefined);
+      store.commit.authMod.CLEAR_STATE();
       store.commit.authMod.LOGGEDIN(false);
-      store.commit.authMod.JWT_ENCRYPTED_KEYPAIR(undefined);
-      store.commit.authMod.KEYPAIR(undefined);
-      store.commit.authMod.PUBKEY(undefined);
-      store.commit.authMod.THREAD_ID(undefined);
+      store.commit.decksMod.CLEAR_STATE();
+      console.log(store.state.decksMod);
+      localForage.clear();
     },
 
     async checkAuth({ state }: ActionContext<AuthState, RootState>): Promise<boolean | undefined> {
       try {
-        const options = {
+        const options: AxiosRequestConfig = {
           url: state.API_URL + '/auth-check',
           headers: {
             'X-Forwarded-Proto': 'https',
           },
           method: 'GET',
           withCredentials: true,
-        } as AxiosRequestConfig;
+        };
         console.log('check auth cookie: ' + JSON.stringify(Vue.$cookies.get('eduvault.sess')));
 
         const authCheck = await axios(options);
-        console.log(authCheck.data);
+        // console.log(authCheck.data);
         if (authCheck.data.code == 200) {
           // if we don't have an identity, check for jwt and localstorage,
           if (state.keyPair) {
@@ -192,14 +202,14 @@ export default {
 
     async getUser({ state }: ActionContext<AuthState, RootState>) {
       try {
-        const options = {
+        const options: AxiosRequestConfig = {
           url: state.API_URL + '/get-user',
           headers: {
             'X-Forwarded-Proto': 'https',
           },
           method: 'GET',
           withCredentials: true,
-        } as AxiosRequestConfig;
+        };
         const response = await axios(options);
         console.log(response.data);
         if (!response.data || !response.data.data || !response.data.data.jwt) return null;

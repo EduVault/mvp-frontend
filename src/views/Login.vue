@@ -25,6 +25,7 @@
       ></login-signup-buttons>
       <login-google></login-google>
       <login-facebook></login-facebook>
+      <login-metamask></login-metamask>
     </div>
   </div>
 </template>
@@ -36,11 +37,19 @@ import LoginPassword from '../components/LoginPassword.vue';
 import LoginSignupButtons from '../components/LoginSignupButtons.vue';
 import LoginGoogle from '../components/LoginGoogle.vue';
 import LoginFacebook from '../components/LoginFacebook.vue';
+import LoginMetamask from '../components/LoginMetamask.vue';
 
 import store from '../store';
 export default {
   name: 'Login',
-  components: { LoginPassword, LoginSignupButtons, BAlert, LoginGoogle, LoginFacebook },
+  components: {
+    LoginPassword,
+    LoginSignupButtons,
+    BAlert,
+    LoginGoogle,
+    LoginFacebook,
+    LoginMetamask,
+  },
   setup() {
     const state = reactive({
       email: '' as string,

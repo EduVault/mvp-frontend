@@ -4,7 +4,7 @@
       class="oauth-login-button"
       src="@/assets/google-button.png"
       alt="google login"
-      width="250px"
+      width="256px"
       @click="openLink"
     />
   </div>

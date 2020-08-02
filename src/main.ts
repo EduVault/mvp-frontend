@@ -31,6 +31,9 @@ Vue.config.productionTip = false;
 Vue.use(VueCompositionApi);
 Vue.use(LayoutPlugin);
 
+import VueCookies from 'vue-cookies';
+Vue.use(VueCookies);
+
 new Vue({
   router,
   store: store.original,

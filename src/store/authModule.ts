@@ -11,7 +11,10 @@ import { saveLoginData, passwordResolveAuthCheck, socialMediaResolveAuthCheck } 
 import { API_URL_ROOT, PASSWORD_SIGNUP, DEV_API_URL_ROOT, PASSWORD_LOGIN } from '../config';
 import defaultDeck from '@/assets/defaultDeck.json';
 import { connectClient } from '../store/textileHelpers';
-import { conformsTo } from 'lodash';
+
+import Vue from 'vue';
+import VueCookies from 'vue-cookies';
+Vue.use(VueCookies);
 
 export default {
   namespaced: true as true,
@@ -95,6 +98,7 @@ export default {
 
         const response = await axios(options);
         const responseData = response.data;
+        console.log('login cookie: ' + JSON.stringify(Vue.$cookies.get('eduvault.sess')));
         console.log('login/signup data: ' + JSON.stringify(responseData));
         if (responseData.code !== 200) {
           if (responseData.message) return responseData.message;
@@ -144,6 +148,7 @@ export default {
           method: 'GET',
           withCredentials: true,
         } as AxiosRequestConfig;
+        console.log('check auth cookie: ' + JSON.stringify(Vue.$cookies.get('eduvault.sess')));
 
         const authCheck = await axios(options);
         console.log(authCheck.data);

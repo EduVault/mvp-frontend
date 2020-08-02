@@ -95,7 +95,7 @@ export default {
 
         const response = await axios(options);
         const responseData = response.data;
-        console.log('login/signup data', responseData);
+        console.log('login/signup data', JSON.stringify(responseData));
         if (responseData.code !== 200) {
           if (responseData.message) return responseData.message;
           else return 'Unable to connect to database';
@@ -146,6 +146,7 @@ export default {
         } as AxiosRequestConfig;
 
         const authCheck = await axios(options);
+        console.log(authCheck.data);
         if (authCheck.data.code == 200) {
           // if we don't have an identity, check for jwt and localstorage,
           if (state.keyPair) {
@@ -179,7 +180,7 @@ export default {
           return false;
         }
       } catch (err) {
-        console.log('other error', err, err.message);
+        console.log('other error', JSON.stringify(err, err.message));
         return false;
       }
     },

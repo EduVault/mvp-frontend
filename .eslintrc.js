@@ -28,11 +28,5 @@ module.exports = {
         jest: true,
       },
     },
-    {
-      file: ['**/src/store/ethSign.js'],
-      env: {
-        js: true,
-      },
-    },
   ],
 };

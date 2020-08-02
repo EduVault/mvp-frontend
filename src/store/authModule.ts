@@ -95,7 +95,7 @@ export default {
 
         const response = await axios(options);
         const responseData = response.data;
-        console.log('login/signup data', JSON.stringify(responseData));
+        console.log('login/signup data: ' + JSON.stringify(responseData));
         if (responseData.code !== 200) {
           if (responseData.message) return responseData.message;
           else return 'Unable to connect to database';
@@ -180,7 +180,7 @@ export default {
           return false;
         }
       } catch (err) {
-        console.log('other error', JSON.stringify(err, err.message));
+        console.log('other error: ' + JSON.stringify(err, err.message));
         return false;
       }
     },

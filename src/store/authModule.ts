@@ -240,8 +240,7 @@ export default {
             await store.commit.decksMod.CLIENT(client);
             await store.dispatch.decksMod.setUpListening();
             // sync all remote instances with our local ones
-            const threadDeckInstances = await store.dispatch.decksMod.getAllDeckInstances();
-            await store.dispatch.decksMod.deckMergeToState(threadDeckInstances.instancesList);
+            await store.dispatch.decksMod.deckMergeToThread(store.state.decksMod.decks);
           } else throw 'unable to connect to Threads DB';
         } catch (err) {
           if (

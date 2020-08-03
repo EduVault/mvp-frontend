@@ -107,7 +107,7 @@ export default {
     });
 
     const createDeck = async function(deck: Deck) {
-      await store.dispatch.decksMod.deckMergeToState([deck]);
+      await store.dispatch.decksMod.deckMergeToState({ decks: [deck], skipThreadMerge: false });
       state.selectedDeck = deck;
       state.showDeckEditor = false;
     };

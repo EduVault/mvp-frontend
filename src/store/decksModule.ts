@@ -4,6 +4,7 @@ import { InstanceList, Instance } from '@textile/threads-client/dist/models/quer
 import store from './index';
 import { Collection, Client } from '@textile/hub';
 import { combineBacklog } from './utils';
+import { connectClient } from '../store/textileHelpers';
 
 const defaultState: DecksState = {
   decks: [] as Deck[],
@@ -133,8 +134,12 @@ export default {
       });
     },
     /** Will add a new deck or update an existing deck if its updatedAt date is higher. Will send all changes to Thread for syncing */
-    async deckMergeToState({ state }: ActionContext<DecksState, RootState>, decks: Deck[]) {
+    async deckMergeToState(
+      { state }: ActionContext<DecksState, RootState>,
+      payload: { decks: Deck[]; skipThreadMerge: boolean }
+    ) {
       const stateDecks = state.decks;
+      const decks = payload.decks;
       console.log('merging decks to state. decks, state decks', decks, stateDecks);
       const updateList: Deck[] = [];
       decks.forEach(deck => {
@@ -150,7 +155,7 @@ export default {
       });
       if (updateList.length > 0) {
         store.commit.decksMod.DECKS(updateList);
-        store.dispatch.decksMod.deckMergeToThread(updateList);
+        if (!payload.skipThreadMerge) store.dispatch.decksMod.deckMergeToThread(updateList);
       }
     },
     /** Adds or updates decks to the ThreadDB. Will replace whole deck that has lower updatedAt.
@@ -166,18 +171,32 @@ export default {
         console.log(err);
         store.commit.decksMod.addToBacklog(decksRaw);
         console.log('state.backlog', state.backlog);
+        //try to reconnect
+        const client = await connectClient(
+          store.state.authMod.API_WS_URL + '/ws/auth',
+          store.state.authMod.jwt!,
+          store.state.authMod.keyPair!,
+          store.state.authMod.threadID!
+        );
+        if (client) store.dispatch.decksMod.deckMergeToThread(decksRaw);
+        else throw 'unable to reconnect';
+        return null;
       }
-      if (!instanceList) throw 'deck instance list not found';
+      if (!instanceList) {
+        console.log('deck instance list not found', instanceList);
+        return null;
+      }
       // combine backlog into current
       let decks = decksRaw;
-      console.log('state.backlog', state.backlog);
+      // console.log('state.backlog', state.backlog);
       if (state.backlog && state.backlog.length > 0) {
         decks = combineBacklog(decks, state.backlog);
       }
       const threadDecks = instanceList.instancesList;
-      // console.log('existingInstances', threadDecks);
+      console.log('existingInstances', threadDecks);
       const decksToCreate: Deck[] = [];
       const decksToUpdate: Deck[] = [];
+      const decksToAddLocal: Deck[] = [];
       decks.forEach(deck => {
         const exists = threadDecks.map(threadDeck => threadDeck._id).includes(deck._id);
         if (!exists) decksToCreate.push(deck);
@@ -188,7 +207,18 @@ export default {
             }
           });
       });
-      // console.log('decks to merge to thread', decksToCreate, decksToUpdate);
+      threadDecks.forEach(threadDeck => {
+        const exists = decks.map(deck => deck._id).includes(threadDeck._id);
+        if (!exists) decksToAddLocal.push(threadDeck);
+        else
+          decks.forEach(localDeck => {
+            if (threadDeck._id == localDeck._id) {
+              if (threadDeck.updatedAt > localDeck.updatedAt) decksToAddLocal.push(threadDeck);
+            }
+          });
+      });
+      console.log('decks to merge to thread', decksToCreate, decksToUpdate);
+      console.log('decks to add local', decksToAddLocal);
       if (decksToCreate.length > 0 || decksToUpdate.length > 0)
         try {
           if (!store.state.authMod.threadID || !state.client) throw 'no threadID or client';
@@ -210,6 +240,7 @@ export default {
             createdDecks,
             decksToUpdate.map(deck => deck._id)
           );
+
           store.commit.decksMod.removeFromBacklog(
             createdDecks.concat(decksToUpdate.map(deck => deck._id))
           );
@@ -219,6 +250,10 @@ export default {
           store.commit.decksMod.addToBacklog(decks);
           store.commit.authMod.SYNCING(false);
         }
+      store.dispatch.decksMod.deckMergeToState({
+        decks: decksToAddLocal,
+        skipThreadMerge: true,
+      });
     },
     async getAllDeckInstances({
       state,
@@ -242,7 +277,10 @@ export default {
           } else {
             // console.log('instance changed remotely', reply);
             if (reply?.instance) {
-              store.dispatch.decksMod.deckMergeToState([reply.instance]);
+              store.dispatch.decksMod.deckMergeToState({
+                decks: [reply.instance],
+                skipThreadMerge: true,
+              });
               store.commit.authMod.SYNCING(false);
             }
           }

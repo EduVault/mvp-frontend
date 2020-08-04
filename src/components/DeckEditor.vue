@@ -1,20 +1,22 @@
 <template>
-  <div class="editor">
-    <p class="form__top-label">Title</p>
-    <input v-model="newTitle" class="form__text-input" type="text" />
-    <div class="form__button-row">
-      <font-awesome-icon
-        class="form__button button form__button--cancel"
-        icon="times"
-        size="2x"
-        @click="$emit('closeDeckEditor')"
-      ></font-awesome-icon>
-      <font-awesome-icon
-        class="form__button button form__button--confirm  primary"
-        icon="check"
-        size="2x"
-        @click="newTitle !== '' ? createDeck() : null"
-      ></font-awesome-icon>
+  <div class="editor-wrapper u-scroller">
+    <div class="editor">
+      <p class="form__top-label">Title</p>
+      <input v-model="newTitle" class="form__text-input" type="text" />
+      <div class="form__button-row">
+        <font-awesome-icon
+          class="form__button button form__button--cancel"
+          icon="times"
+          size="2x"
+          @click="$emit('closeDeckEditor')"
+        ></font-awesome-icon>
+        <font-awesome-icon
+          class="form__button button form__button--confirm  primary"
+          icon="check"
+          size="2x"
+          @click="newTitle !== '' ? createDeck() : null"
+        ></font-awesome-icon>
+      </div>
     </div>
   </div>
 </template>

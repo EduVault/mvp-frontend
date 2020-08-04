@@ -72,6 +72,29 @@ COMPONENTS === BLOCKS __ELEMENTS --MODIFIERS
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
+.editor-wrapper {
+  z-index: 5000;
+  overflow: scroll;
+  position: fixed;
+  top: 100px;
+  padding: 20px;
+  height: calc(100% - 150px);
+  left: 0;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.editor {
+  flex-grow: .2;
+  background-color: white;
+  box-shadow: 0px 0px 14px 1px #0000008c;
+  text-align: center;
+  border-radius: 1px;
+  overflow: scroll;
+  height: min-content;
+}
+
 .editing-section {
   display: flex;
   justify-content: space-around;

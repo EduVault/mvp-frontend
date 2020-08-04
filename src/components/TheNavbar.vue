@@ -10,30 +10,22 @@
         :spin="syncing"
         icon="sync"
       />
-      <!-- <font-awesome-icon
-        v-else-if="syncFailed || !online"
-        id="exclamation"
-        style="color: primary;"
-        class="fa-xs"
-        icon="exclamation"
-      /> -->
-      <!-- <font-awesome-icon v-else id="checkmark" style="color: primary;" class="fa-xs" icon="check" /> -->
     </font-awesome-layers>
     <b-link v-if="$router.currentRoute.name == 'Login'" class="nav__link" to="/home">Home</b-link>
-    <b-link v-else-if="loggedIn" to="/login" @click="logout()" class="nav__link">Logout</b-link>
+    <b-link v-else-if="loggedIn" to="/login" class="nav__link" @click="logout()">Logout</b-link>
     <b-link v-else class="nav__link" to="/login">Login</b-link>
     <b-collapse v-if="loggedIn" id="nav-collapse" is-nav>
       <b-navbar-nav>
         <b-nav-text>View my data on the IPFS</b-nav-text>
         <b-link
-          class="ml-2"
-          v-for="(deck, index) in decksList.list"
+          v-for="(deck, index) in decks"
           :key="index"
-          @click="viewDeck(deck)"
-          >deck: {{ index + 1 }}</b-link
+          class="ml-2"
+          @click="viewDeck(deck._id)"
+          >{{ deck.title }}</b-link
         >
-        <b-link class="mt-3" @click="newTabLink(bucketLink)"
-          >View my files on the IPFS</b-link
+        <b-link class="mt-3" @click="openBucket()"
+          >View my uploaded photos on the IPFS</b-link
         ></b-navbar-nav
       >
     </b-collapse>
@@ -69,21 +61,17 @@ export default {
     BCollapse,
   },
   setup() {
-    const bucketLink = store.state.authMod.bucketUrl;
-    const threadView = `https://${store.state.authMod.threadIDStr}.thread.hub.textile.io/Deck/`;
-    const decksList = reactive({
-      list: [] as any,
-    });
-    axios.get(threadView).then(res => {
-      res.data.forEach((deck: any) => {
-        decksList.list.push(deck._id);
-      });
-      console.log(decksList);
-    });
-    const newTabLink = (link: string) => {
-      window.open(link, '_blank');
+    const decks = computed(() => store.state.decksMod.decks);
+
+    const openBucket = (link: string) => {
+      const bucketLink = store.state.authMod.bucketUrl;
+      console.log('bucketlink', bucketLink);
+
+      window.open(bucketLink, '_blank');
     };
     const viewDeck = (deckID: string) => {
+      const threadView = `https://${store.state.authMod.threadIDStr}.thread.hub.textile.io/Deck/`;
+
       window.open(threadView + deckID);
     };
     const loggedIn = computed(() => store.getters.authMod.loggedIn);
@@ -93,7 +81,7 @@ export default {
       store.commit.authMod.LOGGEDIN(false);
     };
 
-    return { loggedIn, syncing, logout, newTabLink, threadView, decksList, bucketLink, viewDeck };
+    return { loggedIn, syncing, logout, openBucket, decks, viewDeck };
   },
 };
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div class="editor-wrapper u-scroller">
-    <div class="editor  u-scroller">
+    <div class="editor">
       <p class="form__top-label">Front</p>
       <quill-editor
         class="flashcard__content m-2"
@@ -34,13 +34,13 @@
       <div v-if="newCard">
         <div class="form__top-label">
           Add card to deck:
-          <strong class="form__top-label--strong">{{ newSelectedDeck.title }}</strong>
+          <strong class="form__top-label--strong">{{ selectedDeck.title }}</strong>
         </div>
         <span v-show="decks.length > 1" class="tag-selection">
           <span class="tag-selection__title">Change deck:</span>
           <span v-for="deck in decks" :key="deck._id" class="tag-selection__tag-span">
             <button
-              v-show="deck._id !== newSelectedDeck._id && !deck.deleted"
+              v-show="deck._id !== selectedDeck._id && !deck.deleted"
               class="tag-selection__tag"
               @click="$emit('changeSelectedDeck', deck._id)"
             >
@@ -58,7 +58,7 @@ import { v4 as uuid } from 'uuid';
 import { Quill, quillEditor } from 'vue-quill-editor';
 import 'quill/dist/quill.snow.css';
 import imageUpload from 'quill-plugin-image-upload';
-import { Buffer } from 'buffer';
+import { uploadPictureToBucket } from '../store/textileHelpers';
 
 Quill.register('modules/imageUpload', imageUpload);
 const toolbarContent = [
@@ -121,23 +121,12 @@ export default {
     return {
       newFrontText: '',
       newBackText: '',
-      newSelectedDeck: {
-        cards: [],
-        title: 'none selected',
-        _id: '',
-        deleted: false,
-        ttl: 1596161096048,
-      },
       editorOptions: {
         theme: 'snow',
         modules: {
           imageUpload: {
             upload: async file => {
-              const photoId = uuid();
-              const key = store.state.authMod.bucketKey;
-              const path = await store.state.decksMod.buckets.pushPath(key, 'img/' + photoId, file);
-              console.log('path', path);
-              return 'https://gateway.pinata.cloud' + path.path.path;
+              return await uploadPictureToBucket(file);
             },
           },
           toolbar: toolbarContent,
@@ -153,27 +142,8 @@ export default {
   created() {
     this.setFields();
   },
-  mounted() {
-    this.setSelected();
-  },
+
   methods: {
-    setSelected: function() {
-      console.log('decks', this.decks);
-      console.log('this.selectedDeck', this.selectedDeck);
-      if (
-        this.selectedDeck ==
-        {
-          cards: [],
-          title: 'none selected',
-          _id: '',
-          deleted: false,
-          ttl: 1596161096048,
-        }
-      ) {
-        console.log('selected deck was default');
-        if (this.decks[0]) this.newSelectedDeck = this.decks[0];
-      } else this.newSelectedDeck = this.selectedDeck;
-    },
     setFields: function() {
       if (!this.newCard) {
         this.newFrontText = JSON.parse(JSON.stringify(this.editPayload.frontText));

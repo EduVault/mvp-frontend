@@ -128,6 +128,7 @@ export default {
       store.dispatch.decksMod.editCard(payload);
     };
     const changeSelectedDeck = (deckId: string) => {
+      console.log('changeSelectedDeck', deckId);
       decks.value.forEach(deck => {
         if (deck._id === deckId) state.selectedDeck = deck;
       });

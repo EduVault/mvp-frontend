@@ -2,7 +2,7 @@ import { UserAuth } from '@textile/hub';
 import { AuthState, Deck, deckSchema } from '../types';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { Buffer } from 'buffer';
-import { Collection, Database, Client, ThreadID } from '@textile/hub';
+import { Collection, Database, Client, ThreadID, Buckets, Root } from '@textile/hub';
 import store from './index';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { fromEvent, Observable } from 'rxjs';
@@ -82,12 +82,20 @@ export async function connectClient(
   keyPair: Libp2pCryptoIdentity,
   threadID: ThreadID
 ) {
-  async function createClient(API_URL_ROOT: string, jwt: string, keyPair: Libp2pCryptoIdentity) {
+  async function createClients(
+    API_URL_ROOT: string,
+    jwt: string,
+    keyPair: Libp2pCryptoIdentity,
+    threadID: ThreadID
+  ) {
     try {
       const loginCallback = loginWithChallenge(API_URL_ROOT, jwt, keyPair);
-      const client = Client.withUserAuth(await loginCallback());
-      // console.log('client', client);
-      return client;
+      const threadClient = Client.withUserAuth(await loginCallback());
+      console.log('connecting bucket');
+      const bucketClient = Buckets.withUserAuth(await loginCallback());
+      console.log('bucketClient', bucketClient);
+
+      return { threadClient, bucketClient };
     } catch (error) {
       console.log(error);
       return null;
@@ -96,16 +104,17 @@ export async function connectClient(
   async function findOrCreateDB(client: Client, threadID: ThreadID) {
     // await client.deleteDB(threadID); // use to delete DB during testing
     try {
-      const threadsList = await client.listThreads();
-      console.log(threadsList);
-      console.log('threadID', threadID.toString());
-      const exists = await client.getDBInfo(threadID);
+      const threads = await client.listThreads();
+      const threadsList = threads.listList;
+      // console.log(threadsList);
+      if (!threadsList.find(thread => thread.id === threadID.toString())) throw 'BD not found';
+      // const info = await client.getDBInfo(threadID);
       console.log('database found');
     } catch (err) {
       console.log('database not found');
       await client.newDB(threadID, 'EduVault');
-      const afterCheck = await client?.getDBInfo(threadID);
-      console.log('afterCheck', afterCheck);
+      // const afterCheck = await client?.getDBInfo(threadID);
+      // console.log('afterCheck', afterCheck);
     }
   }
   async function createDeckCollection(client: Client, threadID: ThreadID) {
@@ -116,17 +125,43 @@ export async function connectClient(
       await client.newCollection(threadID, 'Deck', deckSchema);
     }
   }
+  async function createBuckets(buckets: Buckets, threadID: ThreadID) {
+    const root = await buckets.open('files', 'buckets', false, threadID.toString());
+
+    // console.log(root);
+    if (!root) return null;
+    // console.log('creating bucket', buckets);
+    await buckets.withThread(threadID.toString());
+
+    const roots = await buckets.list();
+    // console.log('bucket roots', roots);
+    const existing = roots.find(root => root.name === 'files');
+    let bucketKey = '';
+    if (existing) {
+      bucketKey = existing.key;
+    } else {
+      const created = await buckets.init('files');
+      bucketKey = created.root ? created.root.key : '';
+    }
+    // console.log('bucket key', bucketKey);
+    store.commit.authMod.BUCKET_KEY(bucketKey);
+    store.commit.decksMod.BUCKETS(buckets);
+    const links = await buckets.links(bucketKey);
+    store.commit.authMod.BUCKET_URL(links.url);
+    return bucketKey;
+  }
   store.commit.authMod.SYNCING(true);
   // console.log('API_URL_ROOT, jwt, keyPair, threadID', API_URL_ROOT, jwt, keyPair, threadID);
-  const client = await createClient(API_URL_ROOT, jwt, keyPair);
-  if (client) {
-    await findOrCreateDB(client, threadID);
-    await createDeckCollection(client, threadID);
+  const client = await createClients(API_URL_ROOT, jwt, keyPair, threadID);
+  if (client && client.threadClient) {
+    await findOrCreateDB(client.threadClient, threadID);
+    await createDeckCollection(client.threadClient, threadID);
+    await createBuckets(client.bucketClient, threadID);
     console.log('connected to DB');
   } else {
-    throw 'error connecting to ThreadDB client';
     store.commit.authMod.SYNCING(false);
+    throw 'error connecting to ThreadDB client';
   }
   store.commit.authMod.SYNCING(false);
-  return client;
+  return client.threadClient;
 }

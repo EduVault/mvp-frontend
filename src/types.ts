@@ -1,5 +1,5 @@
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
-import { Client, Database, Collection, ThreadID } from '@textile/hub';
+import { Client, Database, Collection, ThreadID, Buckets } from '@textile/hub';
 import { JSONSchema } from '@textile/threads-database';
 // import { DBInfo } from '@textile/threads';
 
@@ -91,11 +91,14 @@ export interface AuthState {
   pubKey?: string;
   threadID?: ThreadID;
   threadIDStr?: string;
+  bucketKey?: string;
+  bucketUrl?: string;
   jwtEncryptedKeyPair?: string;
 }
 export interface DecksState {
   decks: Deck[];
   client?: Client;
+  buckets?: Buckets;
   deckCollection?: Collection<Deck>;
   backlog?: Deck[];
 }

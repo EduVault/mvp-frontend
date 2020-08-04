@@ -61,8 +61,7 @@ export async function saveLoginData(loginData: any, password: string) {
   if (store.state.authMod.pubKey !== loginData.pubKey)
     await store.commit.authMod.PUBKEY(loginData.pubKey);
 }
-
-export async function passwordResolveAuthCheck(
+export async function passwordRehydrate(
   jwtEncryptedKeyPair: string | undefined,
   pubKey: string | undefined,
   threadIDStr: string | undefined,
@@ -99,7 +98,7 @@ export async function passwordResolveAuthCheck(
   }
 }
 
-export async function socialMediaResolveAuthCheck(
+export async function socialMediaRehydrate(
   jwtEncryptedKeyPair: string | undefined,
   pubKey: string | undefined,
   threadIDStr: string | undefined,

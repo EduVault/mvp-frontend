@@ -34,6 +34,9 @@ Vue.use(LayoutPlugin);
 import VueCookies from 'vue-cookies';
 Vue.use(VueCookies);
 
+import VueDOMPurifyHTML from 'vue-dompurify-html';
+Vue.use(VueDOMPurifyHTML);
+
 new Vue({
   router,
   store: store.original,

@@ -2,12 +2,13 @@ import { DecksState, RootState, Deck, EditCardPayload, Card } from '../types';
 import { ActionContext } from 'vuex';
 import { InstanceList, Instance } from '@textile/threads-client/dist/models/query';
 import store from './index';
-import { Collection, Client } from '@textile/hub';
+import { Collection, Client, Buckets } from '@textile/hub';
 import { combineBacklog } from './utils';
 import { connectClient } from '../store/textileHelpers';
+import defaultDeck from '../assets/defaultDeck.json';
 
 const defaultState: DecksState = {
-  decks: [] as Deck[],
+  decks: [defaultDeck],
   backlog: [] as Deck[],
   client: undefined,
   deckCollection: undefined,
@@ -30,6 +31,9 @@ export default {
     },
     CLIENT(state: DecksState, client: Client) {
       state.client = client;
+    },
+    BUCKETS(state: DecksState, buckets: Buckets) {
+      state.buckets = buckets;
     },
     DECK_COLLECTION(state: DecksState, collection: Collection<Deck>) {
       state.deckCollection = collection;

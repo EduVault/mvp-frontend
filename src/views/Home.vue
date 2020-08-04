@@ -50,7 +50,6 @@ import { reactive, computed, onBeforeMount, onMounted } from '@vue/composition-a
 import { Deck, EditCardPayload } from '@/types';
 import store from '../store';
 import router from '../router';
-import defaultDeck from '../assets/defaultDeck.json';
 
 import CardEditor from '@/components/CardEditor.vue';
 import DeckEditor from '@/components/DeckEditor.vue';
@@ -63,9 +62,6 @@ export default {
   components: { DeckDisplay, DeckEditor, CardEditor, NewCardButton, NewDeckButton },
 
   setup() {
-    onBeforeMount(() => {
-      if (store.state.decksMod.decks.length < 1) store.commit.decksMod.DECKS([defaultDeck]);
-    });
     onMounted(() => {
       function startup(retry: number) {
         if (retry >= 2) router.push('/login/?checkauth=no');
@@ -81,8 +77,12 @@ export default {
             retry: 0,
           });
         else {
-          store.dispatch.authMod.checkAuth().then(result => {
-            if (!result) startup(retry + 1);
+          store.dispatch.authMod.rehydrateUser().then(() => {
+            console.log('checking auth from home');
+            store.dispatch.authMod.checkAuth().then(verified => {
+              if (verified) startup(retry + 1);
+              else router.push('/login/?checkauth=no');
+            });
           });
         }
       }

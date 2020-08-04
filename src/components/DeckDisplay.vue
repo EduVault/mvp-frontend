@@ -13,9 +13,9 @@
           class="deck-display__title dropdown ml-2"
         >
           <b-dropdown-item @click="$emit('deleteDeck', deck._id)">Delete Deck</b-dropdown-item>
-          <b-dropdown-item>Rename</b-dropdown-item>
+          <!-- <b-dropdown-item>Rename</b-dropdown-item>
           <b-dropdown-item>Share to Co-Edit</b-dropdown-item>
-          <b-dropdown-item>Share as Copy</b-dropdown-item>
+          <b-dropdown-item>Share as Copy</b-dropdown-item> -->
         </b-dropdown>
       </div>
     </div>
@@ -78,7 +78,7 @@ export default Vue.extend({
           cards: [] as Card[],
           title: 'Default Deck',
           _id: '',
-          deleted: false,
+          deleted: true,
           ttl: 1596161096048,
         };
       },

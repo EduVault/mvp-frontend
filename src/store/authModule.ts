@@ -7,11 +7,10 @@ import router from '@/router';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { ThreadID } from '@textile/hub';
 import CryptoJS from 'crypto-js';
-import { saveLoginData, passwordResolveAuthCheck, socialMediaResolveAuthCheck } from './utils';
+import { saveLoginData, passwordRehydrate, socialMediaRehydrate } from './utils';
 import { API_URL_ROOT, DEV_API_URL_ROOT, PASSWORD_LOGIN } from '../config';
-import defaultDeck from '@/assets/defaultDeck.json';
 import { connectClient } from '../store/textileHelpers';
-import localForage from 'localforage';
+// import localForage from 'localforage';
 import Vue from 'vue';
 import VueCookies from 'vue-cookies';
 Vue.use(VueCookies);
@@ -37,6 +36,7 @@ const defaultState: AuthState = {
 const getDefaultState = () => {
   return defaultState;
 };
+
 export default {
   namespaced: true as true,
   state: getDefaultState(),
@@ -47,6 +47,9 @@ export default {
   mutations: {
     CLEAR_STATE(state: AuthState) {
       Object.assign(state, getDefaultState());
+    },
+    RESET_STATE(state: AuthState, newstate: AuthState) {
+      Object.assign(state, newstate);
     },
     AUTHTYPE(state: AuthState, type: 'google' | 'facebook' | 'password') {
       state.authType = type;
@@ -71,6 +74,12 @@ export default {
     },
     THREAD_ID_STR(state: AuthState, ID: string | undefined) {
       state.threadIDStr = ID;
+    },
+    BUCKET_KEY(state: AuthState, key: string | undefined) {
+      state.bucketKey = key;
+    },
+    BUCKET_URL(state: AuthState, url: string | undefined) {
+      state.bucketUrl = url;
     },
     JWT_ENCRYPTED_KEYPAIR(state: AuthState, jwtEncryptedKeyPair: string | undefined) {
       state.jwtEncryptedKeyPair = jwtEncryptedKeyPair;
@@ -140,14 +149,68 @@ export default {
         },
         withCredentials: true,
       };
-      axios(options);
+      await axios(options);
       store.commit.authMod.CLEAR_STATE();
       store.commit.authMod.LOGGEDIN(false);
       store.commit.decksMod.CLEAR_STATE();
       console.log(store.state.decksMod);
-      localForage.clear();
+      // localStorage.setItem('vuex', '');
+      router.push('/logn/?checkauth=no');
     },
+    async rehydrateUser({ state }: ActionContext<AuthState, RootState>) {
+      try {
+        // const restoredStore = JSON.parse(localStorage.getItem('sourcelink')!);
+        // await console.log('store', store);
+        const jwt = state.jwt;
+        const keyPair = state.keyPair;
+        const threadID = state.threadID;
+        // console.log(jwt, keyPair, threadID);
+        // console.log(jwt && keyPair && threadID);
+        // if we don't have an identity, check for jwt and localstorage,
+        if (jwt && keyPair && threadID) {
+          try {
+            if (!store.state.decksMod.client) throw 'not connected';
+            const threadsList = await store.state.decksMod.client.listThreads();
+            console.log('authcheck threadsList', threadsList);
+            store.commit.authMod.LOGGEDIN(true);
+          } catch (error) {
+            store.dispatch.authMod.initialize({
+              jwt: jwt,
+              keyPair: keyPair,
+              threadID: threadID,
+              retry: 0,
+            });
+          }
 
+          return true;
+        } else {
+          console.log('state.authType', state.authType);
+          switch (state.authType) {
+            case 'password': {
+              return await passwordRehydrate(
+                state.jwtEncryptedKeyPair,
+                state.pubKey,
+                state.threadIDStr,
+                state.jwt
+              );
+            }
+            case 'google' || 'facebook': {
+              return socialMediaRehydrate(
+                state.jwtEncryptedKeyPair,
+                state.pubKey,
+                state.threadIDStr,
+                state.jwt,
+                state.authType
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.log(err);
+        console.log('other error: ' + JSON.stringify(err, err.message));
+        return false;
+      }
+    },
     async checkAuth({ state }: ActionContext<AuthState, RootState>): Promise<boolean | undefined> {
       try {
         const options: AxiosRequestConfig = {
@@ -158,43 +221,19 @@ export default {
           method: 'GET',
           withCredentials: true,
         };
-        console.log('check auth cookie: ' + JSON.stringify(Vue.$cookies.get('eduvault.sess')));
-
+        // console.log('check auth cookie: ' + JSON.stringify(Vue.$cookies.get('eduvault.sess')));
         const authCheck = await axios(options);
         // console.log(authCheck.data);
-        if (authCheck.data.code == 200) {
-          // if we don't have an identity, check for jwt and localstorage,
-          if (state.keyPair) {
-            store.commit.authMod.LOGGEDIN(true);
-            return true;
-          } else {
-            console.log(state.authType);
-            switch (state.authType) {
-              case 'password': {
-                return await passwordResolveAuthCheck(
-                  state.jwtEncryptedKeyPair,
-                  state.pubKey,
-                  state.threadIDStr,
-                  state.jwt
-                );
-              }
-              case 'google' || 'facebook': {
-                return socialMediaResolveAuthCheck(
-                  state.jwtEncryptedKeyPair,
-                  state.pubKey,
-                  state.threadIDStr,
-                  state.jwt,
-                  state.authType
-                );
-              }
-            }
-          }
+        if (authCheck.data.code === 200) {
+          store.commit.authMod.LOGGEDIN(true);
+          return true;
         } else {
           store.commit.authMod.LOGGEDIN(false);
           console.log('authcheck failed (likely no cookie)');
           return false;
         }
       } catch (err) {
+        console.log(err);
         console.log('other error: ' + JSON.stringify(err, err.message));
         return false;
       }
@@ -211,7 +250,7 @@ export default {
           withCredentials: true,
         };
         const response = await axios(options);
-        console.log(response.data);
+        // console.log(response.data);
         if (!response.data || !response.data.data || !response.data.data.jwt) return null;
         else return response.data.data;
       } catch (err) {
@@ -228,7 +267,10 @@ export default {
         retry: number;
       }
     ) {
-      if (payload.jwt && payload.keyPair && payload.threadID) {
+      console.log('payload.retry', payload.retry);
+      if (payload.retry > 1) {
+        alert('Error connecting to database');
+      } else if (payload.jwt && payload.keyPair && payload.threadID) {
         try {
           const client = await connectClient(
             state.API_WS_URL + '/ws/auth',
@@ -252,8 +294,6 @@ export default {
           }
           console.log(err);
         }
-      } else if (payload.retry > 1) {
-        router.push('/login');
       } else {
         payload.retry++;
         store.dispatch.authMod.initialize(payload);

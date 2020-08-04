@@ -20,10 +20,21 @@ import decksModule from './decksModule';
 //   }
 //   store.commit.decksMod.addDeck(defaultDeck);
 // };
-const vuexLocalForage = new VuexPersistence<RootState>({
-  key: STORAGE_KEY,
-  storage: localForage,
-  restoreState: async (key, storage) => await localForage.getItem<RootState>(key),
+// const vuexLocalForage = new VuexPersistence<RootState>({
+//   key: STORAGE_KEY,
+//   storage: localForage,
+//   restoreState: async (key, storage) => await localForage.getItem<RootState>(key),
+//   reducer: state => ({
+//     decksMod: {
+//       decks: state.decksMod.decks,
+//       backlog: state.decksMod.backlog,
+//     },
+//   }), // only save decks module
+//   // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum
+//   // asyncStorage: true,
+// });
+const vuexLocalStorage = new VuexPersistence<RootState>({
+  storage: window.localStorage,
   reducer: state => ({
     decksMod: {
       decks: state.decksMod.decks,
@@ -35,15 +46,8 @@ const vuexLocalForage = new VuexPersistence<RootState>({
       threadIDStr: state.authMod.threadIDStr,
       authType: state.authMod.authType,
     },
-  }), // only save decks module
-  // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum
-  asyncStorage: true,
+  }),
 });
-// const vuexLocalStorage = new VuexPersistence<State>({
-//   storage: window.localStorage,
-//   reducer: state => ({ decksMod: state.decksMod }), // only save decks module
-//   // filter: mutation => mutation.type == 'addNavItem',
-// });
 // const vuexCookie = new VuexPersistence<State>({
 //   restoreState: (key) => Cookies.getJSON(key),
 //   saveState: (key, state) =>
@@ -68,8 +72,8 @@ const {
     decksMod: decksModule,
   },
   plugins: [
-    vuexLocalForage.plugin,
-    // vuexLocalStorage.plugin,
+    // vuexLocalForage.plugin,
+    vuexLocalStorage.plugin,
     // vuexCookie.plugin,
   ],
 });

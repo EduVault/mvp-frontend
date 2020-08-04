@@ -9,26 +9,34 @@ Vue.use(VueRouter);
 async function reHydrateStorage(to: Route, from: Route, next: any) {
   // undocumented bug in vuex-persist with localforage. Hacky fix from issues forum
   // restored is a promise, when fulfilled means state is restored
+
+  // await console.log('rehydrating storage');
+  // await console.log(store.state.authMod);
   await (store as any).original.restored;
-  await (store as any).restored;
-  next();
+  return null;
 }
 
 /**More strict check */
-async function checkAuthValid(to: Route, from: Route, next: any) {
-  if (to.query.checkauth === 'no' && to.path.includes('login')) {
+function checkAuthValid(to: Route, from: Route, next: any) {
+  if (to.query.checkauth == 'no') {
     next();
     return null;
   }
-  const verified = await store.dispatch.authMod.checkAuth();
-  console.log(verified);
-  if (verified) {
-    next();
-    return null;
-  } else {
-    next('/login/?checkauth=no');
-    return null;
-  }
+  reHydrateStorage(to, from, next).then(() => {
+    store.dispatch.authMod.checkAuth().then((verified: boolean | undefined) => {
+      console.log('checking auth');
+
+      console.log('verified', verified);
+      if (verified) {
+        if (to.path.includes('/login')) next('/home');
+        else next();
+        return null;
+      } else {
+        next('/login/?checkauth=no');
+        return null;
+      }
+    });
+  });
 }
 
 const routes: Array<RouteConfig> = [
@@ -54,9 +62,5 @@ const router = new VueRouter({
   base: '/',
   routes,
 });
-
-router.beforeEach(async (to: Route, from: Route, next: any) => {
-  await reHydrateStorage(to, from, next);
-  await checkAuthValid(to, from, next);
-});
+router.beforeEach(checkAuthValid);
 export default router;

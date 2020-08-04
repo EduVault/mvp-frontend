@@ -155,7 +155,7 @@ export default {
       store.commit.decksMod.CLEAR_STATE();
       console.log(store.state.decksMod);
       // localStorage.setItem('vuex', '');
-      router.push('/logn/?checkauth=no');
+      router.push('/login/?checkauth=no');
     },
     async rehydrateUser({ state }: ActionContext<AuthState, RootState>) {
       try {

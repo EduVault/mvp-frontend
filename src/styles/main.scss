@@ -65,24 +65,7 @@ COMPONENTS === BLOCKS __ELEMENTS --MODIFIERS
   block-name__element-name--modifier-name--modifier-value
 
 ------------------------------------------------ */
-.app__nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 25px;
-  text-align: center;
-  width: 100%;
-  background-color: $secondary;
 
-  &__link {
-    font-weight: bold;
-    color: white;
-    padding: 5px 10px;
-
-    &.router-link-exact-active {
-      color: $primary;
-    }
-  }
-}
 
 .home-section {
   display: grid;

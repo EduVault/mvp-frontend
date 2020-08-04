@@ -89,11 +89,13 @@ export async function connectClient(
     threadID: ThreadID
   ) {
     try {
+      let start = new Date().getTime();
       const loginCallback = loginWithChallenge(API_URL_ROOT, jwt, keyPair);
       const threadClient = Client.withUserAuth(await loginCallback());
-      console.log('connecting bucket');
+      console.log('Client.withUserAuth(await loginCallback())\n', new Date().getTime() - start);
+      start = new Date().getTime();
       const bucketClient = Buckets.withUserAuth(await loginCallback());
-      console.log('bucketClient', bucketClient);
+      console.log('Buckets.withUserAuth(await loginCallback())\n', new Date().getTime() - start);
 
       return { threadClient, bucketClient };
     } catch (error) {
@@ -104,7 +106,9 @@ export async function connectClient(
   async function findOrCreateDB(client: Client, threadID: ThreadID) {
     // await client.deleteDB(threadID); // use to delete DB during testing
     try {
+      const start = new Date().getTime();
       const threads = await client.listThreads();
+      console.log('client.listThreads()\n', new Date().getTime() - start);
       const threadsList = threads.listList;
       // console.log(threadsList);
       if (!threadsList.find(thread => thread.id === threadID.toString())) throw 'BD not found';
@@ -119,21 +123,34 @@ export async function connectClient(
   }
   async function createDeckCollection(client: Client, threadID: ThreadID) {
     try {
+      const start = new Date().getTime();
       await client.find(threadID, 'Deck', {});
+      console.log(` client.find(threadID, 'Deck, {})\n`, new Date().getTime() - start);
     } catch {
+      const start = new Date().getTime();
       console.log(`no 'Deck' collection found`);
       await client.newCollection(threadID, 'Deck', deckSchema);
+      console.log(
+        `client.newCollection(threadID, 'Deck', deckSchema)\n`,
+        new Date().getTime() - start
+      );
     }
   }
   async function createBuckets(buckets: Buckets, threadID: ThreadID) {
-    const root = await buckets.open('files', 'buckets', false, threadID.toString());
+    let start = new Date().getTime();
 
+    const root = await buckets.open('files', 'buckets', false, threadID.toString());
+    console.log(
+      `buckets.open('files', 'buckets', false, threadID.toString())\n`,
+      new Date().getTime() - start
+    );
     // console.log(root);
     if (!root) return null;
     // console.log('creating bucket', buckets);
     await buckets.withThread(threadID.toString());
-
+    start = new Date().getTime();
     const roots = await buckets.list();
+    console.log(`buckets.list()\n`, new Date().getTime() - start);
     // console.log('bucket roots', roots);
     const existing = roots.find(root => root.name === 'files');
     let bucketKey = '';
@@ -146,22 +163,40 @@ export async function connectClient(
     // console.log('bucket key', bucketKey);
     store.commit.authMod.BUCKET_KEY(bucketKey);
     store.commit.decksMod.BUCKETS(buckets);
+    start = new Date().getTime();
+
     const links = await buckets.links(bucketKey);
+    console.log(`buckets.links(bucketKey)\n`, new Date().getTime() - start);
+
     store.commit.authMod.BUCKET_URL(links.url);
     return bucketKey;
   }
   store.commit.authMod.SYNCING(true);
   // console.log('API_URL_ROOT, jwt, keyPair, threadID', API_URL_ROOT, jwt, keyPair, threadID);
+  const start = new Date().getTime();
+
   const client = await createClients(API_URL_ROOT, jwt, keyPair, threadID);
   if (client && client.threadClient) {
     await findOrCreateDB(client.threadClient, threadID);
     await createDeckCollection(client.threadClient, threadID);
     await createBuckets(client.bucketClient, threadID);
-    console.log('connected to DB');
+    console.log('connected to DB. total time:\n', new Date().getTime() - start);
   } else {
     store.commit.authMod.SYNCING(false);
     throw 'error connecting to ThreadDB client';
   }
   store.commit.authMod.SYNCING(false);
   return client.threadClient;
+}
+
+export async function uploadPictureToBucket(file: File) {
+  const start = new Date().getTime();
+  console.log('file size', file.size);
+  const photoId = uuid();
+  const key = store.state.authMod.bucketKey;
+  const path = await store.state.decksMod.buckets!.pushPath(key!, 'img/' + photoId, file);
+  // console.log('path', path);
+  console.log(`buckets.pushPath(key!, 'img/' + photoId, file)\n`, new Date().getTime() - start);
+
+  return 'https://gateway.pinata.cloud' + path.path.path;
 }

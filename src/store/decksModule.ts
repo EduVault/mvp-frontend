@@ -142,9 +142,10 @@ export default {
       { state }: ActionContext<DecksState, RootState>,
       payload: { decks: Deck[]; skipThreadMerge: boolean }
     ) {
+      const start = new Date().getTime();
       const stateDecks = state.decks;
       const decks = payload.decks;
-      console.log('merging decks to state. decks, state decks', decks, stateDecks);
+      // console.log('merging decks to state. decks, state decks', decks, stateDecks);
       const updateList: Deck[] = [];
       decks.forEach(deck => {
         const exists = stateDecks.map(stateDeck => stateDeck._id).includes(deck._id);
@@ -159,6 +160,7 @@ export default {
       });
       if (updateList.length > 0) {
         store.commit.decksMod.DECKS(updateList);
+        console.log(`merging decks to state\n`, new Date().getTime() - start);
         if (!payload.skipThreadMerge) store.dispatch.decksMod.deckMergeToThread(updateList);
       }
     },
@@ -166,6 +168,8 @@ export default {
      * @param decks an array of decks
      */
     async deckMergeToThread({ state }: ActionContext<DecksState, RootState>, decksRaw: Deck[]) {
+      let start = new Date().getTime();
+
       console.log(`merging decks to thread`, decksRaw);
       let instanceList;
       try {
@@ -233,6 +237,12 @@ export default {
             'Deck',
             decksToCreate
           ); // client.create() returns the deck _ids //
+          start = new Date().getTime();
+          console.log(
+            `state.client.save(). instance count: ${decksToCreate.length + 1}\n`,
+            new Date().getTime() - start
+          );
+
           const updatedDecks = await state.client.save(
             store.state.authMod.threadID,
             'Deck',
@@ -240,10 +250,14 @@ export default {
           );
           // update doesn't return anything
           console.log(
-            'createdDecks, updatedDecks',
-            createdDecks,
-            decksToUpdate.map(deck => deck._id)
+            `state.client.save(). instance count: ${decksToUpdate.length + 1}\n`,
+            new Date().getTime() - start
           );
+          // console.log(
+          //   'createdDecks, updatedDecks',
+          //   createdDecks,
+          //   decksToUpdate.map(deck => deck._id)
+          // );
 
           store.commit.decksMod.removeFromBacklog(
             createdDecks.concat(decksToUpdate.map(deck => deck._id))
@@ -262,20 +276,27 @@ export default {
     async getAllDeckInstances({
       state,
     }: ActionContext<DecksState, RootState>): Promise<InstanceList<Deck>> {
+      const start = new Date().getTime();
+
       if (!store.state.authMod.threadID || !state.client) throw 'no threadID or client';
       const response = await state.client.find<Deck>(store.state.authMod.threadID, 'Deck', {});
       // console.log('getAllDeckInstances response', response);
+      console.log(
+        `state.client.find<Deck>(store.state.authMod.threadID, 'Deck', {});\n`,
+        new Date().getTime() - start
+      );
+
       return response;
     },
     async setUpListening({ state }: ActionContext<DecksState, RootState>) {
       if (!store.state.authMod.threadID || !state.client) throw 'no threadID or client';
-      console.log('setting up listening');
+      // console.log('setting up listening');
       state.client.listen(
         store.state.authMod.threadID,
         [{ collectionName: 'Deck' }],
         async (reply?: Instance<Deck>, err?) => {
+          const start = new Date().getTime();
           store.commit.authMod.SYNCING(true);
-
           if (err) {
             console.log(err);
           } else {
@@ -285,6 +306,7 @@ export default {
                 decks: [reply.instance],
                 skipThreadMerge: true,
               });
+              console.log(`reacting to state.client.listen()\n`, new Date().getTime() - start);
               store.commit.authMod.SYNCING(false);
             }
           }

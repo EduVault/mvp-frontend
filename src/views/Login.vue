@@ -1,6 +1,25 @@
 <template>
   <div>
-    <div id="login-body">
+    <div v-if="state.landing" class="landing-page">
+      <b-img class="landing-img" src="/img/icons/flashy-cards-cover-square.png" />
+      <img
+        @click="state.landing = false"
+        src="@/assets/eduvault-button.png"
+        class="oauth-login-button eduvault-button"
+        width="256px"
+      />
+    </div>
+    <div v-else id="login-body">
+      <img class="m-2" src="@/assets/eduvault-logo-word-bw.png" alt="" width="100px" />
+      <h4>
+        With EduVault, have true ownership of your data, and carry it with you between learning
+        apps.
+        <a class="secondary learn-more" href="">Learn more</a>
+      </h4>
+      <img class="security-option" src="@/assets/most-secure.png" width="150px" />
+      <login-metamask></login-metamask>
+      <img class="security-option" src="@/assets/secure.png" width="150px" />
+
       <b-alert
         :show="state.dismissCountDown"
         dismissible
@@ -23,16 +42,17 @@
         @login="loginOrSignup(false)"
         @signup="loginOrSignup(true)"
       ></login-signup-buttons>
+      <img class="security-option" src="@/assets/less-secure.png" width="150px" />
+
       <login-google></login-google>
       <login-facebook></login-facebook>
-      <login-metamask></login-metamask>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import { reactive, watch } from '@vue/composition-api';
-import { BAlert } from 'bootstrap-vue';
+import { BAlert, BImg } from 'bootstrap-vue';
 import LoginPassword from '../components/LoginPassword.vue';
 import LoginSignupButtons from '../components/LoginSignupButtons.vue';
 import LoginGoogle from '../components/LoginGoogle.vue';
@@ -46,12 +66,14 @@ export default {
     LoginPassword,
     LoginSignupButtons,
     BAlert,
+    BImg,
     LoginGoogle,
     LoginFacebook,
     LoginMetamask,
   },
   setup() {
     const state = reactive({
+      landing: true as boolean,
       email: '' as string,
       password: '' as string,
       emailValidation: false as boolean,
@@ -105,7 +127,30 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import '../styles/_variables.scss';
+.eduvault-button {
+  margin-bottom: auto;
+}
+.learn-more {
+  text-decoration: underline;
+}
+.security-option {
+  margin-top: 1.5rem;
+}
+.landing-page {
+  background-color: #fdeddb;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  height: calc(100vh - 37px);
+}
+.landing-img {
+  width: 90%;
+  object-fit: scale-down;
+  margin: auto;
+  max-width: fit-content;
+}
 #login-body {
   display: flex;
   flex-direction: column;

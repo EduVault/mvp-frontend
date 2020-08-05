@@ -1,6 +1,6 @@
 <template>
-  <b-navbar ref="navbarMain" toggleable="xs" type="dark" variant="secondary">
-    <b-navbar-toggle v-if="loggedIn" target="nav-collapse" />
+  <b-navbar class="navbar__navbar" ref="navbarMain" toggleable="xs" type="dark" variant="secondary">
+    <b-navbar-toggle target="nav-collapse" />
 
     <font-awesome-layers v-if="loggedIn" class="nav-icon__layers fa-lg ">
       <font-awesome-icon class="nav-icon__cloud fa-lg primary " icon="cloud" />
@@ -11,10 +11,15 @@
         icon="sync"
       />
     </font-awesome-layers>
-    <b-link v-if="$router.currentRoute.name == 'Login'" class="nav__link" to="/home">Home</b-link>
-    <b-link v-else-if="loggedIn" to="/login" class="nav__link" @click="logout()">Logout</b-link>
-    <b-link v-else class="nav__link" to="/login">Login</b-link>
-    <b-collapse v-if="loggedIn" id="nav-collapse" is-nav>
+    <b-img height="20px" width="20px" src="/img/icons/flashy-cards-logo-white.svg"></b-img>
+    <b-collapse class="pt-3" id="nav-collapse" is-nav>
+      <b-link v-if="$router.currentRoute.name == 'Login'" class="nav__link mt-3" to="/home"
+        >Home</b-link
+      >
+      <b-link v-else-if="loggedIn" to="/login" class="nav__link mt-3" @click="logout()"
+        >Logout</b-link
+      >
+      <b-link v-else class="nav__link" to="/login">Login</b-link>
       <b-navbar-nav>
         <b-nav-text>View my data on the IPFS</b-nav-text>
         <b-link
@@ -36,6 +41,8 @@ import {
   BLink,
   BNavbar,
   BNavbarNav,
+  BNavbarBrand,
+  BImg,
   // BNavForm,
   // BFormInput,
   BNavbarToggle,
@@ -53,6 +60,7 @@ export default {
     BLink,
     BNavbar,
     BNavbarNav,
+    BImg,
     // BNavForm,
     // BFormInput,
     BNavbarToggle,
@@ -89,6 +97,7 @@ export default {
 #nav-icon__sync {
   margin: 4px 0px 0px 9px;
 }
+
 // .app__nav {
 //   display: flex;
 //   justify-content: space-between;

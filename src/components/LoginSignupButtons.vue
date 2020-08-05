@@ -1,11 +1,11 @@
 <template>
   <b-form class="login-component__body">
-    <p v-if="state.showSignup">
-      Welcome. Thanks for signing up!
+    <!-- <p v-if="state.showSignup" class="m-0">
+      Sign up now!
     </p>
     <p v-else class="m-0">
-      Welcome back! Please sign in.
-    </p>
+      Welcome back!
+    </p> -->
     <span>
       <b-button
         v-if="state.showSignup"

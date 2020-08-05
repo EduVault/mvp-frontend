@@ -75,7 +75,7 @@ export default {
     },
     colorBack: {
       type: String,
-      default: '#2ecc71',
+      default: '#371C00',
     },
     headerFront: {
       type: String,

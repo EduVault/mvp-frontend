@@ -5,12 +5,12 @@
       v-model="state.email"
       :state="emailValidation"
       @formchange="
-        $emit('updateEmail', state.email);
-        $emit('emailValidation', emailValidation);
+        $emit('update-email', state.email);
+        $emit('email-validation', emailValidation);
       "
       @keyup="
-        $emit('updateEmail', state.email);
-        $emit('emailValidation', emailValidation);
+        $emit('update-email', state.email);
+        $emit('email-validation', emailValidation);
       "
     ></b-form-input>
     <b-form-invalid-feedback v-if="state.email" :state="emailValidation">{{
@@ -24,8 +24,8 @@
       :state="passwordValidation"
       type="password"
       @keyup="
-        $emit('updatePassword', state.password);
-        $emit('passwordValidation', passwordValidation);
+        $emit('update-dassword', state.password);
+        $emit('password-validation', passwordValidation);
       "
     ></b-form-input>
     <b-form-invalid-feedback v-if="state.password" :state="passwordValidation">{{

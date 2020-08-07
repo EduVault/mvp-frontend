@@ -101,7 +101,7 @@ export default {
           method: 'POST',
           data: {
             username: payload.username,
-            password: payload.password,
+            password: CryptoJS.SHA256(payload.password).toString(),
           } as any,
         } as AxiosRequestConfig;
         if (payload.signup) {

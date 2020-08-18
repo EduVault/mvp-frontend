@@ -38,7 +38,7 @@
     "core-js": "^3.6.4",
     "crypto-js": "^4.0.0",
     "direct-vuex": "^0.11.0",
-    "dotwallet-vue": "^0.1.97",
+    "dotwallet-vue": "^0.1.99",
     "eth-sig-util": "^2.3.0",
     "ethereumjs-util": "^5.1.1",
     "ethjs": "^0.3.0",

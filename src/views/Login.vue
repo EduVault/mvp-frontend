@@ -3,10 +3,10 @@
     <div v-if="state.landing" class="landing-page">
       <b-img class="landing-img" src="/img/icons/flashy-cards-cover-square.png" />
       <img
-        @click="state.landing = false"
         src="@/assets/eduvault-button.png"
         class="oauth-login-button eduvault-button"
         width="256px"
+        @click="state.landing = false"
       />
     </div>
     <div v-else id="login-body">
@@ -46,6 +46,7 @@
 
       <login-google></login-google>
       <login-facebook></login-facebook>
+      <login-dotwallet></login-dotwallet>
     </div>
   </div>
 </template>
@@ -58,8 +59,9 @@ import LoginSignupButtons from '../components/LoginSignupButtons.vue';
 import LoginGoogle from '../components/LoginGoogle.vue';
 import LoginFacebook from '../components/LoginFacebook.vue';
 import LoginMetamask from '../components/LoginMetamask.vue';
-
+import LoginDotwallet from '../components/LoginDotwallet.vue';
 import store from '../store';
+import { DOTWALLET_AUTH, API_URL_ROOT, DEV_API_URL_ROOT, DOTWALLET_APP_ID } from '@/config';
 export default {
   name: 'Login',
   components: {
@@ -70,6 +72,7 @@ export default {
     LoginGoogle,
     LoginFacebook,
     LoginMetamask,
+    LoginDotwallet,
   },
   setup() {
     const state = reactive({

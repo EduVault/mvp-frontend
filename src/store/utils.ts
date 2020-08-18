@@ -103,7 +103,7 @@ export async function socialMediaRehydrate(
   pubKey: string | undefined,
   threadIDStr: string | undefined,
   stateJwt: string | undefined,
-  authType: 'google' | 'facebook'
+  authType: 'google' | 'facebook' | 'dotwallet'
 ): Promise<boolean> {
   let jwt = stateJwt;
   if (jwt && jwtEncryptedKeyPair && threadIDStr && pubKey) {
@@ -118,7 +118,10 @@ export async function socialMediaRehydrate(
     const user: User = await store.dispatch.authMod.getUser();
     console.log(user);
     const socialMediaKeyPair = user.socialMediaKeyPair;
-    const socialMediaID = user[authType]?.id;
+    const socialMediaID =
+      authType === 'google' || authType === 'facebook'
+        ? user[authType]?.id
+        : user.dotwallet?.user_open_id;
     const threadIDStr = user.threadIDStr;
     const pubKey = user.pubKey;
     jwt = user.jwt;

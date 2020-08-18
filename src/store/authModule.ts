@@ -51,7 +51,7 @@ export default {
     RESET_STATE(state: AuthState, newstate: AuthState) {
       Object.assign(state, newstate);
     },
-    AUTHTYPE(state: AuthState, type: 'google' | 'facebook' | 'password') {
+    AUTHTYPE(state: AuthState, type: 'google' | 'facebook' | 'dotwallet' | 'password') {
       state.authType = type;
     },
     LOGGEDIN(state: AuthState, bool: boolean) {
@@ -194,7 +194,7 @@ export default {
                 state.jwt
               );
             }
-            case 'google' || 'facebook': {
+            case 'google' || 'facebook' || 'dotwallet': {
               return socialMediaRehydrate(
                 state.jwtEncryptedKeyPair,
                 state.pubKey,

@@ -14,7 +14,17 @@ export interface User {
   DbInfo?: string;
   facebook?: SocialMediaAccount;
   google?: SocialMediaAccount;
+  dotwallet?: DotwalletProfile;
   jwt?: string;
+}
+interface DotwalletProfile {
+  pay_status: number;
+  pre_amount: number;
+  total_amount: number;
+  user_address: string;
+  user_avatar: string;
+  user_name: string;
+  user_open_id: string;
 }
 interface SocialMediaAccount {
   id?: string;
@@ -86,7 +96,7 @@ export interface AuthState {
   loggedIn: boolean;
   syncing: boolean;
   keyPair?: Libp2pCryptoIdentity;
-  authType?: 'google' | 'facebook' | 'password' | 'metamask';
+  authType?: 'google' | 'facebook' | 'password' | 'metamask' | 'dotwallet';
   jwt?: string;
   pubKey?: string;
   threadID?: ThreadID;

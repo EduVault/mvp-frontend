@@ -3,6 +3,7 @@ import VueRouter, { RouteConfig, Route, NavigationGuardNext } from 'vue-router';
 import store from '../store';
 import Login from '../views/Login.vue';
 import Home from '../views/Home.vue';
+import TxList from '../views/TxList.vue';
 Vue.use(VueRouter);
 
 /**undocumented bug in vuex-persist with localforage. Hacky fix from issues forum */
@@ -54,6 +55,11 @@ const routes: Array<RouteConfig> = [
     path: '/home',
     name: 'Home',
     component: Home,
+  },
+  {
+    path: '/txlist',
+    name: 'TxList',
+    component: TxList,
   },
 ];
 

@@ -21,7 +21,9 @@
       >
       <b-link v-else class="nav__link" to="/login">Login</b-link>
       <b-navbar-nav>
-        <b-nav-text>View my data on the IPFS</b-nav-text>
+        <b-link class="mt-3" @click="saveToChain()">Save my cards to the BitcoinSV chain</b-link>
+        <b-link class="mt-3" to="/txlist">View my saved cards transactions</b-link>
+        <b-nav-text class="mt-3">View my data on the IPFS</b-nav-text>
         <b-link
           v-for="(deck, index) in decks"
           :key="index"
@@ -88,8 +90,11 @@ export default {
       store.dispatch.authMod.logout();
       store.commit.authMod.LOGGEDIN(false);
     };
+    const saveToChain = () => {
+      store.dispatch.decksMod.saveDecksToChain();
+    };
 
-    return { loggedIn, syncing, logout, openBucket, decks, viewDeck };
+    return { loggedIn, syncing, logout, openBucket, decks, viewDeck, saveToChain };
   },
 };
 </script>

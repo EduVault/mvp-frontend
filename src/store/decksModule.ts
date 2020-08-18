@@ -2,10 +2,12 @@ import { DecksState, RootState, Deck, EditCardPayload, Card } from '../types';
 import { ActionContext } from 'vuex';
 import { InstanceList, Instance } from '@textile/threads-client/dist/models/query';
 import store from './index';
+import axios, { AxiosRequestConfig } from 'axios';
 import { Collection, Client, Buckets } from '@textile/hub';
 import { combineBacklog } from './utils';
 import { connectClient } from '../store/textileHelpers';
 import defaultDeck from '../assets/defaultDeck.json';
+import { API_URL_ROOT, DEV_API_URL_ROOT, PASSWORD_LOGIN } from '../config';
 
 const defaultState: DecksState = {
   decks: [defaultDeck],
@@ -106,6 +108,36 @@ export default {
     },
   },
   actions: {
+    async saveDecksToChain({ state }: ActionContext<DecksState, RootState>) {
+      const options = {
+        url: store.state.authMod.API_URL + '/save-data',
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Forwarded-Proto': 'https',
+        },
+        method: 'POST',
+        data: state.decks as any,
+      } as AxiosRequestConfig;
+
+      const saveDataResponse = await axios(options);
+      const saveDataData = saveDataResponse.data;
+      console.log('saveDataData', saveDataData);
+    },
+    async deckSavedTxIds(): Promise<any> {
+      const options: AxiosRequestConfig = {
+        url: store.state.authMod.API_URL + '/txlist',
+        headers: {
+          'X-Forwarded-Proto': 'https',
+        },
+        method: 'GET',
+        withCredentials: true,
+      };
+      const saveDataResponse = await axios(options);
+      const saveDataData = saveDataResponse.data;
+      console.log('saveDataData', saveDataData);
+      return saveDataData.data;
+    },
     async addCard({ state }: ActionContext<DecksState, RootState>, payload: EditCardPayload) {
       await store.commit.decksMod.addCard(payload);
       for (const deck of state.decks) {

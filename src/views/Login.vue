@@ -18,7 +18,7 @@
       </h4>
       <img class="security-option" src="@/assets/most-secure.png" width="150px" />
       <login-dotwallet></login-dotwallet>
-      <login-metamask></login-metamask>
+      <!-- <login-metamask></login-metamask> -->
       <img class="security-option" src="@/assets/secure.png" width="150px" />
 
       <b-alert
@@ -61,7 +61,6 @@ import LoginFacebook from '../components/LoginFacebook.vue';
 import LoginMetamask from '../components/LoginMetamask.vue';
 import LoginDotwallet from '../components/LoginDotwallet.vue';
 import store from '../store';
-import { DOTWALLET_AUTH, API_URL_ROOT, DEV_API_URL_ROOT, DOTWALLET_APP_ID } from '@/config';
 export default {
   name: 'Login',
   components: {
@@ -71,7 +70,7 @@ export default {
     BImg,
     LoginGoogle,
     LoginFacebook,
-    LoginMetamask,
+    // LoginMetamask,
     LoginDotwallet,
   },
   setup() {

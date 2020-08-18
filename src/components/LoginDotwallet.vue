@@ -1,9 +1,14 @@
 <template>
   <div @click="login()" class="login-component__body mb-1 ">
-    <dotwallet-login
-      :app-id="dotwalletAppId"
-      :redirect-url="dotwalletRedirectUrl"
-    ></dotwallet-login>
+    <dotwallet-login :app-id="dotwalletAppId" :redirect-url="dotwalletRedirectUrl">
+      <img
+        class="oauth-login-button"
+        src="@/assets/dotwallet-button.png"
+        alt="google login"
+        width="256px"
+        @click="openLink"
+      />
+    </dotwallet-login>
   </div>
 </template>
 

@@ -17,6 +17,7 @@
         <a class="secondary learn-more" href="">Learn more</a>
       </h4>
       <img class="security-option" src="@/assets/most-secure.png" width="150px" />
+      <login-dotwallet></login-dotwallet>
       <login-metamask></login-metamask>
       <img class="security-option" src="@/assets/secure.png" width="150px" />
 
@@ -46,7 +47,6 @@
 
       <login-google></login-google>
       <login-facebook></login-facebook>
-      <login-dotwallet></login-dotwallet>
     </div>
   </div>
 </template>

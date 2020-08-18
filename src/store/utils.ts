@@ -106,6 +106,7 @@ export async function socialMediaRehydrate(
   authType: 'google' | 'facebook' | 'dotwallet'
 ): Promise<boolean> {
   let jwt = stateJwt;
+  // console.log('stateJwt', stateJwt);
   if (jwt && jwtEncryptedKeyPair && threadIDStr && pubKey) {
     // check if we have jwtEncryptedKeyPair and threadIDStr and pubKey try to resolve from that
     const threadID = ThreadID.fromString(threadIDStr);
@@ -116,7 +117,7 @@ export async function socialMediaRehydrate(
     return true;
   } else {
     const user: User = await store.dispatch.authMod.getUser();
-    console.log(user);
+    // console.log('user', user);
     const socialMediaKeyPair = user.socialMediaKeyPair;
     const socialMediaID =
       authType === 'google' || authType === 'facebook'
@@ -128,6 +129,7 @@ export async function socialMediaRehydrate(
     if (jwt && threadIDStr && socialMediaKeyPair && socialMediaID && pubKey) {
       const threadID = ThreadID.fromString(threadIDStr);
       const rehydratedKeyPair = await rehydrateKeyPair(socialMediaKeyPair, pubKey, socialMediaID);
+      // console.log('rehydratedKeyPair', rehydratedKeyPair);
       await store.commit.authMod.KEYPAIR(rehydratedKeyPair);
       await store.commit.authMod.THREAD_ID(threadID);
       await store.commit.authMod.JWT(jwt);

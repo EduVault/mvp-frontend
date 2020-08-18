@@ -164,14 +164,14 @@ export default {
         const jwt = state.jwt;
         const keyPair = state.keyPair;
         const threadID = state.threadID;
-        // console.log(jwt, keyPair, threadID);
+        // console.log('jwt, keyPair, threadID', jwt, keyPair, threadID);
         // console.log(jwt && keyPair && threadID);
         // if we don't have an identity, check for jwt and localstorage,
         if (jwt && keyPair && threadID) {
           try {
             if (!store.state.decksMod.client) throw 'not connected';
             const threadsList = await store.state.decksMod.client.listThreads();
-            console.log('authcheck threadsList', threadsList);
+            // console.log('authcheck threadsList', threadsList);
             store.commit.authMod.LOGGEDIN(true);
           } catch (error) {
             store.dispatch.authMod.initialize({
@@ -184,25 +184,26 @@ export default {
 
           return true;
         } else {
-          console.log('state.authType', state.authType);
-          switch (state.authType) {
-            case 'password': {
-              return await passwordRehydrate(
-                state.jwtEncryptedKeyPair,
-                state.pubKey,
-                state.threadIDStr,
-                state.jwt
-              );
-            }
-            case 'google' || 'facebook' || 'dotwallet': {
-              return socialMediaRehydrate(
-                state.jwtEncryptedKeyPair,
-                state.pubKey,
-                state.threadIDStr,
-                state.jwt,
-                state.authType
-              );
-            }
+          // console.log('state.authType', state.authType);
+          if (state.authType === 'password') {
+            return await passwordRehydrate(
+              state.jwtEncryptedKeyPair,
+              state.pubKey,
+              state.threadIDStr,
+              state.jwt
+            );
+          } else if (
+            state.authType === 'dotwallet' ||
+            state.authType === 'google' ||
+            state.authType === 'facebook'
+          ) {
+            return await socialMediaRehydrate(
+              state.jwtEncryptedKeyPair,
+              state.pubKey,
+              state.threadIDStr,
+              state.jwt,
+              state.authType
+            );
           }
         }
       } catch (err) {
@@ -250,7 +251,7 @@ export default {
           withCredentials: true,
         };
         const response = await axios(options);
-        // console.log(response.data);
+        console.log('get-user', response.data);
         if (!response.data || !response.data.data || !response.data.data.jwt) return null;
         else return response.data.data;
       } catch (err) {

@@ -1,9 +1,8 @@
 <template>
-  <div class="login-component__body mb-1 ">
+  <div @click="login()" class="login-component__body mb-1 ">
     <dotwallet-login
       :app-id="dotwalletAppId"
       :redirect-url="dotwalletRedirectUrl"
-      @click="login()"
     ></dotwallet-login>
   </div>
 </template>
@@ -15,16 +14,13 @@ import ip from 'ip';
 import store from '../store';
 export default {
   components: { DotwalletLogin },
-  created() {
-    console.log(ip.address() + ':3000' + DOTWALLET_AUTH);
-  },
   data() {
     return {
       dotwalletAppId: DOTWALLET_APP_ID,
       dotwalletRedirectUrl:
         process.env.NODE_ENV === 'production'
           ? 'https://' + API_URL_ROOT + DOTWALLET_AUTH
-          : 'http://' + ip.address() + ':3000' + DOTWALLET_AUTH,
+          : 'http://' + ip.address() + ':3003' + DOTWALLET_AUTH, //this doesn't work. need to manually change back to localhost after redirect fails
     };
   },
   methods: {

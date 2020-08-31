@@ -2,7 +2,7 @@ import { UserAuth } from '@textile/hub';
 import { AuthState, Deck, deckSchema } from '../types';
 import { Libp2pCryptoIdentity } from '@textile/threads-core';
 import { Buffer } from 'buffer';
-import { Collection, Database, Client, ThreadID, Buckets, Root } from '@textile/hub';
+import { Client, ThreadID, Buckets, Root } from '@textile/hub';
 import store from './index';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { fromEvent, Observable } from 'rxjs';

@@ -3,7 +3,7 @@ import { ActionContext } from 'vuex';
 import { InstanceList, Instance } from '@textile/threads-client/dist/models/query';
 import store from './index';
 import axios, { AxiosRequestConfig } from 'axios';
-import { Collection, Client, Buckets } from '@textile/hub';
+import { Client, Buckets, Update } from '@textile/hub';
 import { combineBacklog } from './utils';
 import { connectClient } from '../store/textileHelpers';
 import defaultDeck from '../assets/defaultDeck.json';
@@ -36,9 +36,6 @@ export default {
     },
     BUCKETS(state: DecksState, buckets: Buckets) {
       state.buckets = buckets;
-    },
-    DECK_COLLECTION(state: DecksState, collection: Collection<Deck>) {
-      state.deckCollection = collection;
     },
 
     /** Appends decks to the backlog */
@@ -326,7 +323,7 @@ export default {
       state.client.listen(
         store.state.authMod.threadID,
         [{ collectionName: 'Deck' }],
-        async (reply?: Instance<Deck>, err?) => {
+        async (reply?: Update<Deck>, err?) => {
           const start = new Date().getTime();
           store.commit.authMod.SYNCING(true);
           if (err) {

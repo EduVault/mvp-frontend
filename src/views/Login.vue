@@ -18,7 +18,7 @@
       </h4>
       <img class="security-option" src="@/assets/most-secure.png" width="150px" />
       <login-dotwallet></login-dotwallet>
-      <!-- <login-metamask></login-metamask> -->
+      <login-metamask></login-metamask>
       <img class="security-option" src="@/assets/secure.png" width="150px" />
 
       <b-alert
@@ -70,7 +70,7 @@ export default {
     BImg,
     LoginGoogle,
     LoginFacebook,
-    // LoginMetamask,
+    LoginMetamask,
     LoginDotwallet,
   },
   setup() {

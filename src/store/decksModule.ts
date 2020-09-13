@@ -13,7 +13,6 @@ const defaultState: DecksState = {
   decks: [defaultDeck],
   backlog: [] as Deck[],
   client: undefined,
-  deckCollection: undefined,
 };
 const getDefaultState = () => {
   return defaultState;
